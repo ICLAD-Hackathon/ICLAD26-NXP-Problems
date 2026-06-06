@@ -1,0 +1,1989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Secure Peripheral Subsystem SoC — Architecture</title>
+<style>
+:root{--bg:#f8f9fc;--bg2:#ffffff;--bg3:#f0f2f7;--bd:#dde1eb;--fg:#1a1d2e;--dim:#6b7280;
+      --a:#1d6ed8;--a2:#2a7a1a;--a3:#b45309;--a4:#7c3aed;--danger:#b91c1c;--sw:240px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--fg);display:flex;min-height:100vh;}
+nav{position:fixed;top:0;left:0;width:var(--sw);height:100vh;background:var(--bg2);
+    border-right:1px solid var(--bd);overflow-y:auto;z-index:100;padding:0 0 2rem;
+    box-shadow:2px 0 8px rgba(0,0,0,.06);}
+.nh{padding:1.2rem 1rem 1rem;border-bottom:1px solid var(--bd);margin-bottom:.5rem;}
+.nh .t{font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--a);}
+.nh .s{font-size:.68rem;color:var(--dim);margin-top:.2rem;}
+nav a{display:block;padding:.45rem 1rem .45rem 1.2rem;font-size:.78rem;color:var(--dim);
+      text-decoration:none;border-left:2px solid transparent;transition:all .15s;}
+nav a:hover{color:var(--fg);background:var(--bg3);border-left-color:var(--a);}
+nav a.active{color:var(--a);border-left-color:var(--a);background:rgba(29,110,216,.07);font-weight:600;}
+.ns{font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--dim);padding:1rem 1rem .3rem;}
+main{margin-left:var(--sw);flex:1;padding:2rem 2.5rem 4rem;max-width:1200px;}
+.ph{margin-bottom:2.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--bd);}
+.ph h1{font-size:1.6rem;font-weight:700;color:var(--fg);margin-bottom:.4rem;}
+.pm{font-size:.82rem;color:var(--dim);}
+.badge{display:inline-block;padding:.15rem .55rem;border-radius:999px;font-size:.7rem;font-weight:600;margin-right:.4rem;}
+.be{background:rgba(42,122,26,.1);color:var(--a2);border:1px solid rgba(42,122,26,.25);}
+.bi{background:rgba(29,110,216,.1);color:var(--a);border:1px solid rgba(29,110,216,.25);}
+.ba{background:rgba(180,83,9,.1);color:var(--a3);border:1px solid rgba(180,83,9,.25);}
+.sec{margin-bottom:3rem;scroll-margin-top:1.5rem;}
+.sh{display:flex;align-items:baseline;gap:.75rem;margin-bottom:1rem;}
+.sn{font-size:.7rem;font-weight:700;color:var(--dim);}
+.sec h2{font-size:1.1rem;font-weight:700;color:var(--fg);}
+.st{font-size:.68rem;padding:.1rem .45rem;border-radius:4px;font-weight:500;}
+.tc{background:rgba(29,110,216,.1);color:var(--a);border:1px solid rgba(29,110,216,.2);}
+.tr{background:rgba(109,40,217,.1);color:#6d28d9;border:1px solid rgba(109,40,217,.2);}
+.tf{background:rgba(124,58,237,.1);color:var(--a4);border:1px solid rgba(124,58,237,.2);}
+.tg{background:rgba(42,122,26,.1);color:var(--a2);border:1px solid rgba(42,122,26,.2);}
+.ti{background:rgba(180,83,9,.1);color:var(--a3);border:1px solid rgba(180,83,9,.2);}
+.tp{background:rgba(185,28,28,.1);color:var(--danger);border:1px solid rgba(185,28,28,.2);}
+.tm{background:rgba(29,110,216,.1);color:var(--a);border:1px solid rgba(29,110,216,.2);}
+.dc{background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:1.5rem;
+    overflow-x:auto;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.rtw{margin-top:1.2rem;border-top:1px solid var(--bd);padding-top:1rem;}
+.rtl{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin-bottom:.5rem;}
+table{width:100%;border-collapse:collapse;font-size:.78rem;}
+th{background:var(--bg3);color:var(--dim);font-size:.68rem;font-weight:600;letter-spacing:.06em;
+   text-transform:uppercase;padding:.5rem .75rem;text-align:left;border-bottom:1px solid var(--bd);}
+td{padding:.4rem .75rem;border-bottom:1px solid var(--bd);vertical-align:top;color:var(--fg);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--bg3);}
+td:first-child{font-family:'Courier New',monospace;color:var(--a);font-size:.76rem;}
+td:nth-child(2){color:var(--a3);font-weight:600;}
+.w1c{color:#b45309!important;font-size:.68rem;font-weight:600;}
+.ro{color:#2a7a1a!important;font-size:.68rem;font-weight:600;}
+.wo{color:#7c3aed!important;font-size:.68rem;font-weight:600;}
+.rw{color:#1d6ed8!important;font-size:.68rem;font-weight:600;}
+.rws{color:#b91c1c!important;font-size:.68rem;font-weight:600;}
+.co{background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;padding:.6rem 1rem;
+    font-size:.82rem;color:#78350f;margin-bottom:1rem;line-height:1.5;}
+.co strong{color:#92400e;}
+.ps{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:1rem 1.2rem;
+    margin-bottom:2rem;font-size:.85rem;color:#1e3a5f;line-height:1.7;}
+.ps h3{font-size:.9rem;font-weight:700;color:#1d4ed8;margin-bottom:.5rem;}
+.ps ol{padding-left:1.2rem;}
+.ps li{margin-bottom:.25rem;}
+.ps code{background:#dbeafe;padding:.1rem .3rem;border-radius:3px;font-size:.8rem;font-family:'Courier New',monospace;}
+.deliv{background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:1rem 1.2rem;
+    font-size:.85rem;color:#14532d;line-height:1.7;}
+.deliv h3{font-size:.9rem;font-weight:700;color:#15803d;margin-bottom:.5rem;}
+.deliv code{background:#dcfce7;padding:.1rem .3rem;border-radius:3px;font-size:.8rem;font-family:'Courier New',monospace;}
+hr.sep{border:none;border-top:1px solid var(--bd);margin:2.5rem 0;}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--bd);border-radius:3px;}
+@media(max-width:768px){nav{display:none;}main{margin-left:0;padding:1rem;}}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nh"><div class="t">NXP SoC · Easy</div><div class="s">Secure Peripheral Subsystem</div></div>
+  <div class="ns">Architecture</div>
+  <a href="#soc-top">01 · SoC Top-Level</a><a href="#reset-sync">02 · Reset Synchronizer</a>
+  <div class="ns">Bus</div>
+  <a href="#bridge-fsm">03 · AHB→APB Bridge FSM</a><a href="#fabric-decode">04 · APB Fabric Decode</a>
+  <div class="ns">Peripherals</div>
+  <a href="#apb-uart">05 · APB UART</a><a href="#apb-gpio">06 · APB GPIO</a>
+  <a href="#apb-timer">07 · APB Timer</a><a href="#apb-watchdog">08 · APB Watchdog FSM</a>
+  <div class="ns">Interrupt &amp; Map</div>
+  <a href="#irq-agg">09 · IRQ Aggregator</a><a href="#addr-map">10 · Address Map</a>
+</nav>
+<main>
+  <div class="ph">
+    <h1>Secure Peripheral Subsystem SoC</h1>
+    <div class="pm"><span class="badge be">EASY</span><span class="badge bi">iverilog</span><span class="badge ba">APB3 · AHB-Lite</span>Architecture reference — diagrams + minimal spec</div>
+  </div>
+
+  <div class="ps">
+    <h3>Problem Statement</h3>
+    <ol>
+      <li>Read the diagrams below to understand the SoC architecture and each IP block's behavior.</li>
+      <li><strong>Infer the YAML spec</strong> for each IP block from the diagrams (e.g., FIFO depth, channel count, timeout cycles).</li>
+      <li>Use the RTL generation library: <code>python3 rtl_gen_lib/rtl_gen_main.py --spec &lt;yaml&gt; --outdir your_rtl/</code></li>
+      <li>Write <code>secure_periph_soc.v</code> to stitch all IPs together per the SoC Top-Level diagram.</li>
+      <li>Compile and simulate: <code>iverilog -g2005 -o sim your_rtl/*.v tb/tb_top_skeleton.v &amp;&amp; vvp sim</code></li>
+    </ol>
+  </div>
+
+  
+  <div class="sec" id="soc-top">
+    <div class="sh"><span class="sn">01</span><h2>SoC Top-Level Interconnect</h2><span class="st tc">graph</span></div>
+    <div class="co">The CPU connects via <strong>AHB-Lite</strong> through a bridge to an <strong>APB fabric</strong> with 5 peripheral slaves. Interrupt lines flow back through the IRQ aggregator. Reset propagates through a synchronizer. Use this diagram to wire up <code>secure_periph_soc.v</code>.</div><div class="dc"><svg style="max-width:100%;height:auto;background:#ffffff;border-radius:6px;" width="1290pt" height="622pt"
+ viewBox="0.00 0.00 1290.07 622.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(36 586)">
+<title>G</title>
+<polygon fill="#ffffff" stroke="none" points="-36,36 -36,-586 1254.07,-586 1254.07,36 -36,36"/>
+<!-- CPU -->
+<g id="node1" class="node">
+<title>CPU</title>
+<path fill="#1a3a5c" stroke="#4a9eff" d="M961.07,-550C961.07,-550 757.07,-550 757.07,-550 751.07,-550 745.07,-544 745.07,-538 745.07,-538 745.07,-500 745.07,-500 745.07,-494 751.07,-488 757.07,-488 757.07,-488 961.07,-488 961.07,-488 967.07,-488 973.07,-494 973.07,-500 973.07,-500 973.07,-538 973.07,-538 973.07,-544 967.07,-550 961.07,-550"/>
+<text text-anchor="middle" x="859.07" y="-534.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">CPU</text>
+<text text-anchor="middle" x="859.07" y="-522.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">AHB&#45;Lite Master</text>
+<text text-anchor="middle" x="859.07" y="-510.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">htrans/haddr/hprot</text>
+<text text-anchor="middle" x="859.07" y="-498.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">hwrite/hwdata/hrdata/hready/hresp</text>
+</g>
+<!-- BRG -->
+<g id="node2" class="node">
+<title>BRG</title>
+<path fill="#2d5016" stroke="#7bc142" d="M613.07,-428C613.07,-428 459.07,-428 459.07,-428 453.07,-428 447.07,-422 447.07,-416 447.07,-416 447.07,-378 447.07,-378 447.07,-372 453.07,-366 459.07,-366 459.07,-366 613.07,-366 613.07,-366 619.07,-366 625.07,-372 625.07,-378 625.07,-378 625.07,-416 625.07,-416 625.07,-422 619.07,-428 613.07,-428"/>
+<text text-anchor="middle" x="536.07" y="-412.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">AHB&#45;to&#45;APB Bridge</text>
+<text text-anchor="middle" x="536.07" y="-400.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">NONSEQ&#45;&gt;SETUP+ENABLE</text>
+<text text-anchor="middle" x="536.07" y="-388.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">hready=0 while APB busy</text>
+<text text-anchor="middle" x="536.07" y="-376.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">2&#45;cycle ERROR on PSLVERR</text>
+</g>
+<!-- CPU&#45;&gt;BRG -->
+<g id="edge1" class="edge">
+<title>CPU&#45;&gt;BRG</title>
+<path fill="none" stroke="#4a9eff" stroke-width="1.6" d="M777.98,-487.87C731.82,-470.72 673.89,-449.2 626.29,-431.52"/>
+<polygon fill="#4a9eff" stroke="#4a9eff" stroke-width="1.6" points="627.51,-428.24 616.92,-428.03 625.07,-434.8 627.51,-428.24"/>
+<text text-anchor="middle" x="726.57" y="-455.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">AHB&#45;Lite</text>
+</g>
+<!-- FAB -->
+<g id="node3" class="node">
+<title>FAB</title>
+<path fill="#2d5016" stroke="#7bc142" d="M630.57,-306C630.57,-306 441.57,-306 441.57,-306 435.57,-306 429.57,-300 429.57,-294 429.57,-294 429.57,-256 429.57,-256 429.57,-250 435.57,-244 441.57,-244 441.57,-244 630.57,-244 630.57,-244 636.57,-244 642.57,-250 642.57,-256 642.57,-256 642.57,-294 642.57,-294 642.57,-300 636.57,-306 630.57,-306"/>
+<text text-anchor="middle" x="536.07" y="-290.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">APB Fabric (5 slaves)</text>
+<text text-anchor="middle" x="536.07" y="-278.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">Decode paddr[31:12] &#160;4KB/slave</text>
+<text text-anchor="middle" x="536.07" y="-266.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">Timeout 16cyc&#45;&gt;PSLVERR</text>
+<text text-anchor="middle" x="536.07" y="-254.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">Priv filter on S3</text>
+</g>
+<!-- BRG&#45;&gt;FAB -->
+<g id="edge2" class="edge">
+<title>BRG&#45;&gt;FAB</title>
+<path fill="none" stroke="#7bc142" stroke-width="1.6" d="M536.07,-365.72C536.07,-350.8 536.07,-332.59 536.07,-316.49"/>
+<polygon fill="#7bc142" stroke="#7bc142" stroke-width="1.6" points="539.57,-316.27 536.07,-306.27 532.57,-316.27 539.57,-316.27"/>
+<text text-anchor="middle" x="565.07" y="-333.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">APB3 master</text>
+</g>
+<!-- UART -->
+<g id="node4" class="node">
+<title>UART</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M707.57,-184C707.57,-184 556.57,-184 556.57,-184 550.57,-184 544.57,-178 544.57,-172 544.57,-172 544.57,-134 544.57,-134 544.57,-128 550.57,-122 556.57,-122 556.57,-122 707.57,-122 707.57,-122 713.57,-122 719.57,-128 719.57,-134 719.57,-134 719.57,-172 719.57,-172 719.57,-178 713.57,-184 707.57,-184"/>
+<text text-anchor="middle" x="632.07" y="-168.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">apb_uart &#160;S0</text>
+<text text-anchor="middle" x="632.07" y="-156.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x0000_0000</text>
+<text text-anchor="middle" x="632.07" y="-144.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">Full&#45;duplex 16&#45;deep FIFOs</text>
+<text text-anchor="middle" x="632.07" y="-132.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">Prog baud CTS/RTS</text>
+</g>
+<!-- FAB&#45;&gt;UART -->
+<g id="edge3" class="edge">
+<title>FAB&#45;&gt;UART</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" d="M560.3,-243.72C572.8,-228.09 588.19,-208.85 601.51,-192.21"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="604.34,-194.27 607.86,-184.27 598.88,-189.89 604.34,-194.27"/>
+<text text-anchor="middle" x="592.57" y="-211.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">S0</text>
+</g>
+<!-- GPIO -->
+<g id="node5" class="node">
+<title>GPIO</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M952.57,-184C952.57,-184 771.57,-184 771.57,-184 765.57,-184 759.57,-178 759.57,-172 759.57,-172 759.57,-134 759.57,-134 759.57,-128 765.57,-122 771.57,-122 771.57,-122 952.57,-122 952.57,-122 958.57,-122 964.57,-128 964.57,-134 964.57,-134 964.57,-172 964.57,-172 964.57,-178 958.57,-184 952.57,-184"/>
+<text text-anchor="middle" x="862.07" y="-168.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">apb_gpio &#160;S1</text>
+<text text-anchor="middle" x="862.07" y="-156.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x0000_1000</text>
+<text text-anchor="middle" x="862.07" y="-144.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">32 bidir pins 3&#45;stage debounce</text>
+<text text-anchor="middle" x="862.07" y="-132.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">Edge/Level IRQ</text>
+</g>
+<!-- FAB&#45;&gt;GPIO -->
+<g id="edge4" class="edge">
+<title>FAB&#45;&gt;GPIO</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" d="M642.82,-270.35C696.92,-264.31 761.65,-250.33 812.07,-219 822.75,-212.37 832.01,-202.58 839.56,-192.6"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="842.56,-194.42 845.49,-184.24 836.85,-190.37 842.56,-194.42"/>
+<text text-anchor="middle" x="830.57" y="-211.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">S1</text>
+</g>
+<!-- TMR -->
+<g id="node6" class="node">
+<title>TMR</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M190.07,-184C190.07,-184 48.07,-184 48.07,-184 42.07,-184 36.07,-178 36.07,-172 36.07,-172 36.07,-134 36.07,-134 36.07,-128 42.07,-122 48.07,-122 48.07,-122 190.07,-122 190.07,-122 196.07,-122 202.07,-128 202.07,-134 202.07,-134 202.07,-172 202.07,-172 202.07,-178 196.07,-184 190.07,-184"/>
+<text text-anchor="middle" x="119.07" y="-168.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">apb_timer &#160;S2</text>
+<text text-anchor="middle" x="119.07" y="-156.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x0000_2000</text>
+<text text-anchor="middle" x="119.07" y="-144.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">2x 32&#45;bit down&#45;counters</text>
+<text text-anchor="middle" x="119.07" y="-132.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">8&#45;bit prescaler PWM</text>
+</g>
+<!-- FAB&#45;&gt;TMR -->
+<g id="edge5" class="edge">
+<title>FAB&#45;&gt;TMR</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" d="M430.66,-243.91C369.69,-226.47 291.53,-204.07 222.07,-184 218.75,-183.04 215.37,-182.06 211.95,-181.07"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="212.84,-177.69 202.26,-178.26 210.89,-184.41 212.84,-177.69"/>
+<text text-anchor="middle" x="349.57" y="-211.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">S2</text>
+</g>
+<!-- WDT -->
+<g id="node7" class="node">
+<title>WDT</title>
+<path fill="#5c1a1a" stroke="#ff4444" d="M410.07,-184C410.07,-184 254.07,-184 254.07,-184 248.07,-184 242.07,-178 242.07,-172 242.07,-172 242.07,-134 242.07,-134 242.07,-128 248.07,-122 254.07,-122 254.07,-122 410.07,-122 410.07,-122 416.07,-122 422.07,-128 422.07,-134 422.07,-134 422.07,-172 422.07,-172 422.07,-178 416.07,-184 410.07,-184"/>
+<text text-anchor="middle" x="332.07" y="-168.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">apb_watchdog &#160;S3</text>
+<text text-anchor="middle" x="332.07" y="-156.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x0000_3000 &#160;PRIVILEGED</text>
+<text text-anchor="middle" x="332.07" y="-144.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">Two&#45;stage timeout</text>
+<text text-anchor="middle" x="332.07" y="-132.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">Magic&#45;key unlock</text>
+</g>
+<!-- FAB&#45;&gt;WDT -->
+<g id="edge6" class="edge">
+<title>FAB&#45;&gt;WDT</title>
+<path fill="none" stroke="#ff4444" stroke-width="1.6" d="M438.88,-243.96C422.6,-236.97 406.37,-228.68 392.07,-219 381.03,-211.53 370.58,-201.65 361.59,-191.86"/>
+<polygon fill="#ff4444" stroke="#ff4444" stroke-width="1.6" points="363.95,-189.24 354.71,-184.07 358.71,-193.88 363.95,-189.24"/>
+<text text-anchor="middle" x="422.07" y="-211.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">S3 privileged</text>
+</g>
+<!-- IRQA -->
+<g id="node8" class="node">
+<title>IRQA</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M1206.07,-184C1206.07,-184 1056.07,-184 1056.07,-184 1050.07,-184 1044.07,-178 1044.07,-172 1044.07,-172 1044.07,-134 1044.07,-134 1044.07,-128 1050.07,-122 1056.07,-122 1056.07,-122 1206.07,-122 1206.07,-122 1212.07,-122 1218.07,-128 1218.07,-134 1218.07,-134 1218.07,-172 1218.07,-172 1218.07,-178 1212.07,-184 1206.07,-184"/>
+<text text-anchor="middle" x="1131.07" y="-168.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">irq_aggregator &#160;S4</text>
+<text text-anchor="middle" x="1131.07" y="-156.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x0000_4000</text>
+<text text-anchor="middle" x="1131.07" y="-144.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">8 sources Priority encoder</text>
+<text text-anchor="middle" x="1131.07" y="-132.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">Src7=highest Vectored</text>
+</g>
+<!-- FAB&#45;&gt;IRQA -->
+<g id="edge7" class="edge">
+<title>FAB&#45;&gt;IRQA</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" d="M642.84,-256.47C702.97,-246.26 779.36,-232.73 847.07,-219 909.49,-206.35 979.21,-190.42 1033.95,-177.49"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="1035.07,-180.82 1043.99,-175.12 1033.46,-174.01 1035.07,-180.82"/>
+<text text-anchor="middle" x="899.57" y="-211.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">S4</text>
+</g>
+<!-- UART&#45;&gt;IRQA -->
+<g id="edge8" class="edge">
+<title>UART&#45;&gt;IRQA</title>
+<path fill="none" stroke="#cc88ff" stroke-width="1.6" stroke-dasharray="5,2" d="M694.4,-184.13C717.56,-194.1 744.45,-203.85 770.07,-208.83 859.14,-226.17 961.41,-206.69 1034.3,-186.13"/>
+<polygon fill="#cc88ff" stroke="#cc88ff" stroke-width="1.6" points="1035.3,-189.48 1043.94,-183.35 1033.36,-182.76 1035.3,-189.48"/>
+<text text-anchor="middle" x="788.07" y="-211.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">uart_irq</text>
+</g>
+<!-- GPIO&#45;&gt;IRQA -->
+<g id="edge9" class="edge">
+<title>GPIO&#45;&gt;IRQA</title>
+<path fill="none" stroke="#cc88ff" stroke-width="1.6" stroke-dasharray="5,2" d="M964.92,-153C987.56,-153 1011.46,-153 1033.87,-153"/>
+<polygon fill="#cc88ff" stroke="#cc88ff" stroke-width="1.6" points="1034.05,-156.5 1044.05,-153 1034.05,-149.5 1034.05,-156.5"/>
+<text text-anchor="middle" x="1004.32" y="-158.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">gpio_irq</text>
+</g>
+<!-- TMR&#45;&gt;IRQA -->
+<g id="edge10" class="edge">
+<title>TMR&#45;&gt;IRQA</title>
+<path fill="none" stroke="#cc88ff" stroke-width="1.6" stroke-dasharray="5,2" d="M202.15,-179.8C208.85,-181.41 215.55,-182.84 222.07,-184 222.07,-184 985.07,-184 985.07,-184 1000.89,-181.68 1017.56,-178.68 1033.76,-175.46"/>
+<polygon fill="#cc88ff" stroke="#cc88ff" stroke-width="1.6" points="1034.67,-178.85 1043.77,-173.43 1033.28,-171.99 1034.67,-178.85"/>
+<text text-anchor="middle" x="661.07" y="-211.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">timer_irq</text>
+</g>
+<!-- WDT&#45;&gt;IRQA -->
+<g id="edge11" class="edge">
+<title>WDT&#45;&gt;IRQA</title>
+<path fill="none" stroke="#cc88ff" stroke-width="1.6" stroke-dasharray="5,2" d="M422.33,-167.98C454.71,-173.22 491.5,-179.04 525.07,-184 525.07,-184 985.07,-184 985.07,-184 1000.87,-181.52 1017.53,-178.44 1033.72,-175.18"/>
+<polygon fill="#cc88ff" stroke="#cc88ff" stroke-width="1.6" points="1034.63,-178.57 1043.73,-173.14 1033.23,-171.71 1034.63,-178.57"/>
+<text text-anchor="middle" x="726.07" y="-211.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">wdt_irq</text>
+</g>
+<!-- RST -->
+<g id="node9" class="node">
+<title>RST</title>
+<path fill="#1a1a5c" stroke="#8888ff" d="M540.57,-62C540.57,-62 389.57,-62 389.57,-62 383.57,-62 377.57,-56 377.57,-50 377.57,-50 377.57,-12 377.57,-12 377.57,-6 383.57,0 389.57,0 389.57,0 540.57,0 540.57,0 546.57,0 552.57,-6 552.57,-12 552.57,-12 552.57,-50 552.57,-50 552.57,-56 546.57,-62 540.57,-62"/>
+<text text-anchor="middle" x="465.07" y="-46.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">reset_sync</text>
+<text text-anchor="middle" x="465.07" y="-34.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">3&#45;stage sync chain</text>
+<text text-anchor="middle" x="465.07" y="-22.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">Async&#45;assert: POR or WDT</text>
+<text text-anchor="middle" x="465.07" y="-10.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">Sync&#45;deassert&#45;&gt;sys_rst_n</text>
+</g>
+<!-- WDT&#45;&gt;RST -->
+<g id="edge12" class="edge">
+<title>WDT&#45;&gt;RST</title>
+<path fill="none" stroke="#ff4444" stroke-width="1.6" stroke-dasharray="5,2" d="M332.35,-121.72C333.84,-109.84 337.36,-96.75 345.07,-87 351.64,-78.69 359.76,-71.59 368.64,-65.53"/>
+<polygon fill="#ff4444" stroke="#ff4444" stroke-width="1.6" points="370.77,-68.33 377.36,-60.03 367.03,-62.4 370.77,-68.33"/>
+<text text-anchor="middle" x="372.07" y="-89.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">wdt_rst_req</text>
+</g>
+<!-- IRQA&#45;&gt;CPU -->
+<g id="edge13" class="edge">
+<title>IRQA&#45;&gt;CPU</title>
+<path fill="none" stroke="#8888ff" stroke-width="1.6" stroke-dasharray="5,2" d="M1108.56,-184.13C1059.26,-250.1 941.88,-407.19 887.55,-479.88"/>
+<polygon fill="#8888ff" stroke="#8888ff" stroke-width="1.6" points="884.74,-477.8 881.56,-487.9 890.35,-481.99 884.74,-477.8"/>
+<text text-anchor="middle" x="1051.07" y="-333.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">cpu_irq/cpu_irq_id[2:0]</text>
+</g>
+<!-- RST&#45;&gt;BRG -->
+<g id="edge14" class="edge">
+<title>RST&#45;&gt;BRG</title>
+<path fill="none" stroke="#8888ff" stroke-width="1.6" stroke-dasharray="1,5" d="M377.48,-31.17C223.4,-33.01 -71.91,-53.12 16.07,-184 110.04,-323.79 314.01,-371.45 436.71,-387.67"/>
+<polygon fill="#8888ff" stroke="#8888ff" stroke-width="1.6" points="436.5,-391.17 446.86,-388.97 437.39,-384.23 436.5,-391.17"/>
+<text text-anchor="middle" x="62.07" y="-211.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">sys_rst_n</text>
+</g>
+<!-- RST&#45;&gt;FAB -->
+<g id="edge15" class="edge">
+<title>RST&#45;&gt;FAB</title>
+<path fill="none" stroke="#8888ff" stroke-width="1.6" stroke-dasharray="1,5" d="M473.92,-62.16C486.66,-105.57 510.18,-185.75 524.35,-234.04"/>
+<polygon fill="#8888ff" stroke="#8888ff" stroke-width="1.6" points="521.05,-235.23 527.22,-243.84 527.77,-233.26 521.05,-235.23"/>
+</g>
+<!-- RST&#45;&gt;UART -->
+<g id="edge16" class="edge">
+<title>RST&#45;&gt;UART</title>
+<path fill="none" stroke="#8888ff" stroke-width="1.6" stroke-dasharray="1,5" d="M506.91,-62.06C529.59,-78.36 557.79,-98.63 581.68,-115.79"/>
+<polygon fill="#8888ff" stroke="#8888ff" stroke-width="1.6" points="579.77,-118.73 589.93,-121.72 583.85,-113.04 579.77,-118.73"/>
+</g>
+<!-- RST&#45;&gt;GPIO -->
+<g id="edge17" class="edge">
+<title>RST&#45;&gt;GPIO</title>
+<path fill="none" stroke="#8888ff" stroke-width="1.6" stroke-dasharray="1,5" d="M552.73,-58.5C611.76,-76.34 690.03,-100 753.08,-119.05"/>
+<polygon fill="#8888ff" stroke="#8888ff" stroke-width="1.6" points="752.08,-122.41 762.66,-121.95 754.1,-115.71 752.08,-122.41"/>
+</g>
+<!-- RST&#45;&gt;TMR -->
+<g id="edge18" class="edge">
+<title>RST&#45;&gt;TMR</title>
+<path fill="none" stroke="#8888ff" stroke-width="1.6" stroke-dasharray="1,5" d="M378.56,-62C327.82,-79.6 263.71,-101.84 211.91,-119.8"/>
+<polygon fill="#8888ff" stroke="#8888ff" stroke-width="1.6" points="210.69,-116.52 202.39,-123.1 212.98,-123.13 210.69,-116.52"/>
+</g>
+<!-- RST&#45;&gt;WDT -->
+<g id="edge19" class="edge">
+<title>RST&#45;&gt;WDT</title>
+<path fill="none" stroke="#8888ff" stroke-width="1.6" stroke-dasharray="1,5" d="M439.26,-62.2C429.04,-73.55 416.91,-86.28 405.07,-97 398.16,-103.26 390.58,-109.54 382.99,-115.5"/>
+<polygon fill="#8888ff" stroke="#8888ff" stroke-width="1.6" points="380.57,-112.95 374.79,-121.83 384.85,-118.49 380.57,-112.95"/>
+</g>
+<!-- RST&#45;&gt;IRQA -->
+<g id="edge20" class="edge">
+<title>RST&#45;&gt;IRQA</title>
+<path fill="none" stroke="#8888ff" stroke-width="1.6" stroke-dasharray="1,5" d="M552.63,-46.3C656.1,-63.39 833.38,-93.3 985.07,-122 1000.86,-124.99 1017.59,-128.29 1033.86,-131.58"/>
+<polygon fill="#8888ff" stroke="#8888ff" stroke-width="1.6" points="1033.42,-135.07 1043.92,-133.63 1034.82,-128.21 1033.42,-135.07"/>
+</g>
+</g>
+</svg>
+</div>
+  </div>
+  <hr class="sep"/>
+  
+  <div class="sec" id="reset-sync">
+    <div class="sh"><span class="sn">02</span><h2>Reset Synchronizer</h2><span class="st tr">3-stage sync</span></div>
+    <div class="co">Generates <strong>sys_rst_n</strong>: asserts asynchronously on POR or WDT reset, deasserts synchronously after <strong>N flip-flop stages</strong>. Infer <code>stages</code> from the diagram.</div><div class="dc"><svg style="max-width:100%;height:auto;background:#ffffff;border-radius:6px;" width="1267pt" height="369pt"
+ viewBox="0.00 0.00 1266.66 368.87" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(36 332.87)">
+<title>G</title>
+<polygon fill="#ffffff" stroke="none" points="-36,36 -36,-332.87 1230.66,-332.87 1230.66,36 -36,36"/>
+<!-- POR -->
+<g id="node1" class="node">
+<title>POR</title>
+<ellipse fill="#5c1a1a" stroke="#ff4444" cx="140.5" cy="-191.87" rx="129.3" ry="26.74"/>
+<text text-anchor="middle" x="140.5" y="-195.07" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">por_n</text>
+<text text-anchor="middle" x="140.5" y="-183.07" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">Power&#45;On Reset (active&#45;low)</text>
+</g>
+<!-- NG -->
+<g id="node3" class="node">
+<title>NG</title>
+<path fill="#3d1a5c" stroke="#cc88ff" d="M499.49,-179.48C499.49,-179.48 393.51,-148.26 393.51,-148.26 387.76,-146.57 387.76,-143.17 393.51,-141.48 393.51,-141.48 499.49,-110.26 499.49,-110.26 505.24,-108.57 516.76,-108.57 522.51,-110.26 522.51,-110.26 628.49,-141.48 628.49,-141.48 634.24,-143.17 634.24,-146.57 628.49,-148.26 628.49,-148.26 522.51,-179.48 522.51,-179.48 516.76,-181.17 505.24,-181.17 499.49,-179.48"/>
+<text text-anchor="middle" x="511" y="-148.07" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">OR&#45;NAND gate</text>
+<text text-anchor="middle" x="511" y="-136.07" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">Async assert logic</text>
+</g>
+<!-- POR&#45;&gt;NG -->
+<g id="edge1" class="edge">
+<title>POR&#45;&gt;NG</title>
+<path fill="none" stroke="#ff4444" stroke-width="1.6" d="M251.06,-177.9C301.68,-171.44 361.34,-163.83 410.63,-157.54"/>
+<polygon fill="#ff4444" stroke="#ff4444" stroke-width="1.6" points="411.19,-161 420.67,-156.26 410.3,-154.06 411.19,-161"/>
+<text text-anchor="middle" x="331.5" y="-171.67" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">active&#45;low</text>
+</g>
+<!-- WDR -->
+<g id="node2" class="node">
+<title>WDR</title>
+<ellipse fill="#5c1a1a" stroke="#ff4444" cx="140.5" cy="-97.87" rx="137.36" ry="26.74"/>
+<text text-anchor="middle" x="140.5" y="-101.07" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">wdt_rst_req</text>
+<text text-anchor="middle" x="140.5" y="-89.07" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">Watchdog Reset (active&#45;high)</text>
+</g>
+<!-- WDR&#45;&gt;NG -->
+<g id="edge2" class="edge">
+<title>WDR&#45;&gt;NG</title>
+<path fill="none" stroke="#ff4444" stroke-width="1.6" d="M255.82,-112.45C305.34,-118.77 362.78,-126.09 410.51,-132.18"/>
+<polygon fill="#ff4444" stroke="#ff4444" stroke-width="1.6" points="410.18,-135.67 420.54,-133.46 411.06,-128.72 410.18,-135.67"/>
+<text text-anchor="middle" x="331.5" y="-127.67" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">active&#45;high</text>
+</g>
+<!-- F1 -->
+<g id="node5" class="node">
+<title>F1</title>
+<path fill="#1a3a5c" stroke="#4a9eff" d="M887,-281.87C887,-281.87 823,-281.87 823,-281.87 817,-281.87 811,-275.87 811,-269.87 811,-269.87 811,-255.87 811,-255.87 811,-249.87 817,-243.87 823,-243.87 823,-243.87 887,-243.87 887,-243.87 893,-243.87 899,-249.87 899,-255.87 899,-255.87 899,-269.87 899,-269.87 899,-275.87 893,-281.87 887,-281.87"/>
+<text text-anchor="middle" x="855" y="-266.07" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">FF Stage 1</text>
+<text text-anchor="middle" x="855" y="-254.07" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">D&#45;&gt;Q (clk)</text>
+</g>
+<!-- NG&#45;&gt;F1 -->
+<g id="edge3" class="edge">
+<title>NG&#45;&gt;F1</title>
+<path fill="none" stroke="#cc88ff" stroke-width="1.6" d="M571.18,-165.29C636.06,-187.67 739.17,-223.25 801.34,-244.7"/>
+<polygon fill="#cc88ff" stroke="#cc88ff" stroke-width="1.6" points="800.36,-248.06 810.95,-248.02 802.64,-241.45 800.36,-248.06"/>
+<text text-anchor="middle" x="725.5" y="-239.67" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">async CLR (LOW instantly)</text>
+</g>
+<!-- F2 -->
+<g id="node6" class="node">
+<title>F2</title>
+<path fill="#1a3a5c" stroke="#4a9eff" d="M887,-163.87C887,-163.87 823,-163.87 823,-163.87 817,-163.87 811,-157.87 811,-151.87 811,-151.87 811,-137.87 811,-137.87 811,-131.87 817,-125.87 823,-125.87 823,-125.87 887,-125.87 887,-125.87 893,-125.87 899,-131.87 899,-137.87 899,-137.87 899,-151.87 899,-151.87 899,-157.87 893,-163.87 887,-163.87"/>
+<text text-anchor="middle" x="855" y="-148.07" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">FF Stage 2</text>
+<text text-anchor="middle" x="855" y="-136.07" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">D&#45;&gt;Q (clk)</text>
+</g>
+<!-- NG&#45;&gt;F2 -->
+<g id="edge4" class="edge">
+<title>NG&#45;&gt;F2</title>
+<path fill="none" stroke="#cc88ff" stroke-width="1.6" stroke-dasharray="5,2" d="M640.32,-144.87C695.83,-144.87 757.74,-144.87 800.58,-144.87"/>
+<polygon fill="#cc88ff" stroke="#cc88ff" stroke-width="1.6" points="800.77,-148.37 810.77,-144.87 800.77,-141.37 800.77,-148.37"/>
+<text text-anchor="middle" x="725.5" y="-147.67" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">async CLR</text>
+</g>
+<!-- F3 -->
+<g id="node7" class="node">
+<title>F3</title>
+<path fill="#1a3a5c" stroke="#4a9eff" d="M887,-45.87C887,-45.87 823,-45.87 823,-45.87 817,-45.87 811,-39.87 811,-33.87 811,-33.87 811,-19.87 811,-19.87 811,-13.87 817,-7.87 823,-7.87 823,-7.87 887,-7.87 887,-7.87 893,-7.87 899,-13.87 899,-19.87 899,-19.87 899,-33.87 899,-33.87 899,-39.87 893,-45.87 887,-45.87"/>
+<text text-anchor="middle" x="855" y="-30.07" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">FF Stage 3</text>
+<text text-anchor="middle" x="855" y="-18.07" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">D&#45;&gt;Q (clk)</text>
+</g>
+<!-- NG&#45;&gt;F3 -->
+<g id="edge5" class="edge">
+<title>NG&#45;&gt;F3</title>
+<path fill="none" stroke="#cc88ff" stroke-width="1.6" stroke-dasharray="5,2" d="M571.18,-124.45C636.06,-102.07 739.17,-66.49 801.34,-45.04"/>
+<polygon fill="#cc88ff" stroke="#cc88ff" stroke-width="1.6" points="802.64,-48.29 810.95,-41.72 800.36,-41.68 802.64,-48.29"/>
+<text text-anchor="middle" x="725.5" y="-92.67" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">async CLR</text>
+</g>
+<!-- VDD -->
+<g id="node4" class="node">
+<title>VDD</title>
+<ellipse fill="#2d5016" stroke="#7bc142" cx="511" cy="-262.87" rx="70.01" ry="18.27"/>
+<text text-anchor="middle" x="511" y="-260.07" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">1b1 &#160;D input</text>
+</g>
+<!-- VDD&#45;&gt;F1 -->
+<g id="edge6" class="edge">
+<title>VDD&#45;&gt;F1</title>
+<path fill="none" stroke="#7bc142" stroke-width="1.6" d="M581.21,-262.87C646.02,-262.87 741.51,-262.87 800.62,-262.87"/>
+<polygon fill="#7bc142" stroke="#7bc142" stroke-width="1.6" points="800.86,-266.37 810.86,-262.87 800.86,-259.37 800.86,-266.37"/>
+<text text-anchor="middle" x="725.5" y="-265.67" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">D input</text>
+</g>
+<!-- F1&#45;&gt;F2 -->
+<g id="edge7" class="edge">
+<title>F1&#45;&gt;F2</title>
+<path fill="none" stroke="#4a9eff" stroke-width="1.6" d="M855,-243.66C855,-224.89 855,-196.06 855,-174.38"/>
+<polygon fill="#4a9eff" stroke="#4a9eff" stroke-width="1.6" points="858.5,-174.09 855,-164.09 851.5,-174.09 858.5,-174.09"/>
+<text text-anchor="middle" x="847" y="-201.67" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">clk&#45;sync</text>
+</g>
+<!-- F2&#45;&gt;F3 -->
+<g id="edge8" class="edge">
+<title>F2&#45;&gt;F3</title>
+<path fill="none" stroke="#4a9eff" stroke-width="1.6" d="M855,-125.66C855,-106.89 855,-78.06 855,-56.38"/>
+<polygon fill="#4a9eff" stroke="#4a9eff" stroke-width="1.6" points="858.5,-56.09 855,-46.09 851.5,-56.09 858.5,-56.09"/>
+<text text-anchor="middle" x="847" y="-83.67" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">clk&#45;sync</text>
+</g>
+<!-- OUT -->
+<g id="node8" class="node">
+<title>OUT</title>
+<ellipse fill="#2d5016" stroke="#7bc142" cx="1072.33" cy="-26.87" rx="122.16" ry="26.74"/>
+<text text-anchor="middle" x="1072.33" y="-30.07" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">sys_rst_n</text>
+<text text-anchor="middle" x="1072.33" y="-18.07" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">System Reset (active&#45;low)</text>
+</g>
+<!-- F3&#45;&gt;OUT -->
+<g id="edge9" class="edge">
+<title>F3&#45;&gt;OUT</title>
+<path fill="none" stroke="#7bc142" stroke-width="1.6" d="M899.06,-26.87C911.22,-26.87 925.14,-26.87 939.66,-26.87"/>
+<polygon fill="#7bc142" stroke="#7bc142" stroke-width="1.6" points="939.8,-30.37 949.8,-26.87 939.8,-23.37 939.8,-30.37"/>
+</g>
+<!-- NOTE -->
+<g id="node9" class="node">
+<title>NOTE</title>
+<polygon fill="#e8e8f0" stroke="#aaaacc" points="275,-296.87 0,-296.87 0,-258.87 281,-258.87 281,-290.87 275,-296.87"/>
+<polyline fill="none" stroke="#aaaacc" points="275,-296.87 275,-290.87"/>
+<polyline fill="none" stroke="#aaaacc" points="281,-290.87 275,-290.87"/>
+<text text-anchor="middle" x="140.5" y="-281.07" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#444444">Assert: ASYNC &#160;sys_rst_n goes LOW instantly</text>
+<text text-anchor="middle" x="140.5" y="-269.07" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#444444">Deassert: SYNC &#160;rises after 3 clock cycles</text>
+</g>
+</g>
+</svg>
+</div>
+  </div>
+  <hr class="sep"/>
+  
+  <div class="sec" id="bridge-fsm">
+    <div class="sh"><span class="sn">03</span><h2>AHB→APB Bridge FSM</h2><span class="st tf">state machine</span></div>
+    <div class="co">Translates an AHB NONSEQ transaction into an APB SETUP+ENABLE cycle. <strong>hready=0</strong> stalls the CPU while APB is busy. <strong>PSLVERR</strong> generates a 2-cycle AHB ERROR response.</div><div class="dc"><svg style="max-width:100%;height:auto;background:#ffffff;border-radius:6px;" width="613pt" height="721pt"
+ viewBox="0.00 0.00 613.00 721.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(36 685)">
+<title>G</title>
+<polygon fill="#ffffff" stroke="none" points="-36,36 -36,-685 577,-685 577,36 -36,36"/>
+<!-- INIT -->
+<g id="node1" class="node">
+<title>INIT</title>
+<ellipse fill="#4a9eff" stroke="#4a9eff" cx="302" cy="-636.5" rx="12.5" ry="12.5"/>
+</g>
+<!-- IDLE -->
+<g id="node2" class="node">
+<title>IDLE</title>
+<path fill="#1a3a5c" stroke="#4a9eff" d="M391,-542C391,-542 213,-542 213,-542 207,-542 201,-536 201,-530 201,-530 201,-516 201,-516 201,-510 207,-504 213,-504 213,-504 391,-504 391,-504 397,-504 403,-510 403,-516 403,-516 403,-530 403,-530 403,-536 397,-542 391,-542"/>
+<text text-anchor="middle" x="302" y="-526.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">ST_IDLE</text>
+<text text-anchor="middle" x="302" y="-514.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">hready=1 &#160;psel=0 &#160;penable=0</text>
+</g>
+<!-- INIT&#45;&gt;IDLE -->
+<g id="edge1" class="edge">
+<title>INIT&#45;&gt;IDLE</title>
+<path fill="none" stroke="#8888ff" stroke-width="1.6" d="M302,-623.99C302,-607.27 302,-575.75 302,-552.55"/>
+<polygon fill="#8888ff" stroke="#8888ff" stroke-width="1.6" points="305.5,-552.24 302,-542.24 298.5,-552.24 305.5,-552.24"/>
+<text text-anchor="middle" x="323" y="-580.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">sys_rst_n</text>
+</g>
+<!-- IDLE&#45;&gt;IDLE -->
+<g id="edge3" class="edge">
+<title>IDLE&#45;&gt;IDLE</title>
+<path fill="none" stroke="#4a9eff" stroke-width="1.6" stroke-dasharray="5,2" d="M403.27,-534.19C431.43,-533.67 453,-529.94 453,-523 453,-516.92 436.49,-513.31 413.49,-512.16"/>
+<polygon fill="#4a9eff" stroke="#4a9eff" stroke-width="1.6" points="413.38,-508.65 403.27,-511.81 413.14,-515.65 413.38,-508.65"/>
+<text text-anchor="middle" x="493" y="-520.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">htrans!=NONSEQ</text>
+</g>
+<!-- SETUP -->
+<g id="node3" class="node">
+<title>SETUP</title>
+<path fill="#2d5016" stroke="#7bc142" d="M190,-422C190,-422 12,-422 12,-422 6,-422 0,-416 0,-410 0,-410 0,-384 0,-384 0,-378 6,-372 12,-372 12,-372 190,-372 190,-372 196,-372 202,-378 202,-384 202,-384 202,-410 202,-410 202,-416 196,-422 190,-422"/>
+<text text-anchor="middle" x="101" y="-406.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">ST_SETUP</text>
+<text text-anchor="middle" x="101" y="-394.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">hready=0 &#160;psel=1 &#160;penable=0</text>
+<text text-anchor="middle" x="101" y="-382.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">Capture: paddr pwrite pwdata</text>
+</g>
+<!-- IDLE&#45;&gt;SETUP -->
+<g id="edge2" class="edge">
+<title>IDLE&#45;&gt;SETUP</title>
+<path fill="none" stroke="#7bc142" stroke-width="1.6" d="M257.7,-503.93C236.05,-494.38 209.99,-481.78 188,-468 169.68,-456.51 150.8,-441.75 135.34,-428.74"/>
+<polygon fill="#7bc142" stroke="#7bc142" stroke-width="1.6" points="137.46,-425.95 127.58,-422.12 132.92,-431.27 137.46,-425.95"/>
+<text text-anchor="middle" x="226" y="-460.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">htrans=NONSEQ</text>
+</g>
+<!-- EN -->
+<g id="node4" class="node">
+<title>EN</title>
+<path fill="#2d5016" stroke="#7bc142" d="M289,-290C289,-290 111,-290 111,-290 105,-290 99,-284 99,-278 99,-278 99,-252 99,-252 99,-246 105,-240 111,-240 111,-240 289,-240 289,-240 295,-240 301,-246 301,-252 301,-252 301,-278 301,-278 301,-284 295,-290 289,-290"/>
+<text text-anchor="middle" x="200" y="-274.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">ST_ENABLE</text>
+<text text-anchor="middle" x="200" y="-262.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">hready=0 &#160;psel=1 &#160;penable=1</text>
+<text text-anchor="middle" x="200" y="-250.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">Waiting for pready</text>
+</g>
+<!-- SETUP&#45;&gt;EN -->
+<g id="edge4" class="edge">
+<title>SETUP&#45;&gt;EN</title>
+<path fill="none" stroke="#7bc142" stroke-width="1.6" d="M119.39,-371.85C135.23,-351.06 158.21,-320.88 175.58,-298.06"/>
+<polygon fill="#7bc142" stroke="#7bc142" stroke-width="1.6" points="178.44,-300.09 181.71,-290.02 172.87,-295.85 178.44,-300.09"/>
+<text text-anchor="middle" x="177.5" y="-328.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">next cycle</text>
+</g>
+<!-- EN&#45;&gt;IDLE -->
+<g id="edge5" class="edge">
+<title>EN&#45;&gt;IDLE</title>
+<path fill="none" stroke="#7bc142" stroke-width="1.6" d="M209.63,-290.17C228.65,-337.92 270.93,-444.03 291.01,-494.42"/>
+<polygon fill="#7bc142" stroke="#7bc142" stroke-width="1.6" points="287.87,-496 294.83,-504 294.38,-493.41 287.87,-496"/>
+<text text-anchor="middle" x="320" y="-399.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">pready=1 pslverr=0</text>
+<text text-anchor="middle" x="320" y="-389.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">hready=1 hrdata=prdata</text>
+</g>
+<!-- EN&#45;&gt;EN -->
+<g id="edge7" class="edge">
+<title>EN&#45;&gt;EN</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" stroke-dasharray="5,2" d="M301.27,-277.31C329.43,-276.74 351,-272.64 351,-265 351,-258.32 334.49,-254.34 311.49,-253.07"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="311.39,-249.57 301.27,-252.69 311.13,-256.56 311.39,-249.57"/>
+<text text-anchor="middle" x="388.5" y="-262.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">pready=0 (wait)</text>
+</g>
+<!-- E1 -->
+<g id="node5" class="node">
+<title>E1</title>
+<path fill="#5c1a1a" stroke="#ff4444" d="M372.5,-158C372.5,-158 225.5,-158 225.5,-158 219.5,-158 213.5,-152 213.5,-146 213.5,-146 213.5,-132 213.5,-132 213.5,-126 219.5,-120 225.5,-120 225.5,-120 372.5,-120 372.5,-120 378.5,-120 384.5,-126 384.5,-132 384.5,-132 384.5,-146 384.5,-146 384.5,-152 378.5,-158 372.5,-158"/>
+<text text-anchor="middle" x="299" y="-142.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">ST_ERROR1</text>
+<text text-anchor="middle" x="299" y="-130.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">hresp=ERROR &#160;hready=0</text>
+</g>
+<!-- EN&#45;&gt;E1 -->
+<g id="edge6" class="edge">
+<title>EN&#45;&gt;E1</title>
+<path fill="none" stroke="#ff4444" stroke-width="1.6" d="M219.32,-239.8C236.29,-218.55 260.9,-187.72 278.27,-165.96"/>
+<polygon fill="#ff4444" stroke="#ff4444" stroke-width="1.6" points="281.04,-168.11 284.54,-158.11 275.57,-163.74 281.04,-168.11"/>
+<text text-anchor="middle" x="302.5" y="-196.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">pready=1 pslverr=1</text>
+</g>
+<!-- E2 -->
+<g id="node6" class="node">
+<title>E2</title>
+<path fill="#5c1a1a" stroke="#ff4444" d="M486.5,-38C486.5,-38 339.5,-38 339.5,-38 333.5,-38 327.5,-32 327.5,-26 327.5,-26 327.5,-12 327.5,-12 327.5,-6 333.5,0 339.5,0 339.5,0 486.5,0 486.5,0 492.5,0 498.5,-6 498.5,-12 498.5,-12 498.5,-26 498.5,-26 498.5,-32 492.5,-38 486.5,-38"/>
+<text text-anchor="middle" x="413" y="-22.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">ST_ERROR2</text>
+<text text-anchor="middle" x="413" y="-10.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">hresp=ERROR &#160;hready=1</text>
+</g>
+<!-- E1&#45;&gt;E2 -->
+<g id="edge8" class="edge">
+<title>E1&#45;&gt;E2</title>
+<path fill="none" stroke="#ff4444" stroke-width="1.6" d="M316.56,-119.82C335.87,-99.84 367,-67.61 388.66,-45.2"/>
+<polygon fill="#ff4444" stroke="#ff4444" stroke-width="1.6" points="391.17,-47.63 395.6,-38.01 386.14,-42.77 391.17,-47.63"/>
+<text text-anchor="middle" x="382.5" y="-76.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">next cycle</text>
+</g>
+<!-- E2&#45;&gt;IDLE -->
+<g id="edge9" class="edge">
+<title>E2&#45;&gt;IDLE</title>
+<path fill="none" stroke="#ff4444" stroke-width="1.6" d="M435.99,-38.2C459.94,-59.38 494,-96.75 494,-138 494,-398 494,-398 494,-398 494,-451.21 441.31,-482.7 391.13,-500.63"/>
+<polygon fill="#ff4444" stroke="#ff4444" stroke-width="1.6" points="389.81,-497.38 381.48,-503.93 392.07,-504 389.81,-497.38"/>
+<text text-anchor="middle" x="517.5" y="-262.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">next cycle</text>
+</g>
+</g>
+</svg>
+</div>
+  </div>
+  <hr class="sep"/>
+  
+  <div class="sec" id="fabric-decode">
+    <div class="sh"><span class="sn">04</span><h2>APB Fabric Address Decode</h2><span class="st tg">flowchart</span></div>
+    <div class="co">Routes APB master to one of 5 slaves based on <strong>paddr[31:12]</strong>. Slave 3 (Watchdog) requires <strong>pprot[0]=1</strong> (privileged). Any non-responding slave times out after <strong>16 cycles → PSLVERR</strong>. Infer <code>timeout_cyc</code>.</div><div class="dc"><svg style="max-width:100%;height:auto;background:#ffffff;border-radius:6px;" width="1046pt" height="727pt"
+ viewBox="0.00 0.00 1045.50 727.48" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(36 691.48)">
+<title>G</title>
+<polygon fill="#ffffff" stroke="none" points="-36,36 -36,-691.48 1009.5,-691.48 1009.5,36 -36,36"/>
+<!-- IN -->
+<g id="node1" class="node">
+<title>IN</title>
+<ellipse fill="#1a3a5c" stroke="#4a9eff" cx="512" cy="-628.61" rx="120.83" ry="26.74"/>
+<text text-anchor="middle" x="512" y="-631.81" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">APB Master</text>
+<text text-anchor="middle" x="512" y="-619.81" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">paddr pprot psel penable</text>
+</g>
+<!-- DEC -->
+<g id="node2" class="node">
+<title>DEC</title>
+<path fill="#2d5016" stroke="#7bc142" d="M500.57,-547.09C500.57,-547.09 404.43,-516.39 404.43,-516.39 398.72,-514.57 398.72,-510.91 404.43,-509.09 404.43,-509.09 500.57,-478.39 500.57,-478.39 506.28,-476.57 517.72,-476.57 523.43,-478.39 523.43,-478.39 619.57,-509.09 619.57,-509.09 625.28,-510.91 625.28,-514.57 619.57,-516.39 619.57,-516.39 523.43,-547.09 523.43,-547.09 517.72,-548.91 506.28,-548.91 500.57,-547.09"/>
+<text text-anchor="middle" x="512" y="-515.94" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">paddr[31:12]</text>
+<text text-anchor="middle" x="512" y="-503.94" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">Address Decode</text>
+</g>
+<!-- IN&#45;&gt;DEC -->
+<g id="edge1" class="edge">
+<title>IN&#45;&gt;DEC</title>
+<path fill="none" stroke="#4a9eff" stroke-width="1.6" d="M512,-601.49C512,-589.56 512,-575.04 512,-561.28"/>
+<polygon fill="#4a9eff" stroke="#4a9eff" stroke-width="1.6" points="515.5,-560.96 512,-550.96 508.5,-560.96 515.5,-560.96"/>
+</g>
+<!-- S0 -->
+<g id="node4" class="node">
+<title>S0</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M315.5,-414.74C315.5,-414.74 232.5,-414.74 232.5,-414.74 226.5,-414.74 220.5,-408.74 220.5,-402.74 220.5,-402.74 220.5,-388.74 220.5,-388.74 220.5,-382.74 226.5,-376.74 232.5,-376.74 232.5,-376.74 315.5,-376.74 315.5,-376.74 321.5,-376.74 327.5,-382.74 327.5,-388.74 327.5,-388.74 327.5,-402.74 327.5,-402.74 327.5,-408.74 321.5,-414.74 315.5,-414.74"/>
+<text text-anchor="middle" x="274" y="-398.94" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">S0: apb_uart</text>
+<text text-anchor="middle" x="274" y="-386.94" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x0000_0000</text>
+</g>
+<!-- DEC&#45;&gt;S0 -->
+<g id="edge2" class="edge">
+<title>DEC&#45;&gt;S0</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" d="M465.83,-489.43C423.98,-469.21 362.6,-439.55 320.62,-419.26"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="321.97,-416.03 311.44,-414.83 318.92,-422.33 321.97,-416.03"/>
+<text text-anchor="middle" x="394" y="-442.54" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">0x000</text>
+</g>
+<!-- S1 -->
+<g id="node5" class="node">
+<title>S1</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M462.5,-414.74C462.5,-414.74 379.5,-414.74 379.5,-414.74 373.5,-414.74 367.5,-408.74 367.5,-402.74 367.5,-402.74 367.5,-388.74 367.5,-388.74 367.5,-382.74 373.5,-376.74 379.5,-376.74 379.5,-376.74 462.5,-376.74 462.5,-376.74 468.5,-376.74 474.5,-382.74 474.5,-388.74 474.5,-388.74 474.5,-402.74 474.5,-402.74 474.5,-408.74 468.5,-414.74 462.5,-414.74"/>
+<text text-anchor="middle" x="421" y="-398.94" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">S1: apb_gpio</text>
+<text text-anchor="middle" x="421" y="-386.94" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x0000_1000</text>
+</g>
+<!-- DEC&#45;&gt;S1 -->
+<g id="edge3" class="edge">
+<title>DEC&#45;&gt;S1</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" d="M488.57,-482.12C474.08,-463.82 455.67,-440.55 441.72,-422.92"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="444.22,-420.44 435.27,-414.77 438.73,-424.79 444.22,-420.44"/>
+<text text-anchor="middle" x="477" y="-442.54" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">0x001</text>
+</g>
+<!-- S2 -->
+<g id="node6" class="node">
+<title>S2</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M609.5,-414.74C609.5,-414.74 526.5,-414.74 526.5,-414.74 520.5,-414.74 514.5,-408.74 514.5,-402.74 514.5,-402.74 514.5,-388.74 514.5,-388.74 514.5,-382.74 520.5,-376.74 526.5,-376.74 526.5,-376.74 609.5,-376.74 609.5,-376.74 615.5,-376.74 621.5,-382.74 621.5,-388.74 621.5,-388.74 621.5,-402.74 621.5,-402.74 621.5,-408.74 615.5,-414.74 609.5,-414.74"/>
+<text text-anchor="middle" x="568" y="-398.94" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">S2: apb_timer</text>
+<text text-anchor="middle" x="568" y="-386.94" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x0000_2000</text>
+</g>
+<!-- DEC&#45;&gt;S2 -->
+<g id="edge4" class="edge">
+<title>DEC&#45;&gt;S2</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" d="M527.6,-479.71C536.09,-462.26 546.5,-440.9 554.62,-424.22"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="557.87,-425.53 559.11,-415 551.58,-422.46 557.87,-425.53"/>
+<text text-anchor="middle" x="562" y="-442.54" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">0x002</text>
+</g>
+<!-- S3 -->
+<g id="node7" class="node">
+<title>S3</title>
+<path fill="#5c1a1a" stroke="#ff4444" d="M168,-414.74C168,-414.74 12,-414.74 12,-414.74 6,-414.74 0,-408.74 0,-402.74 0,-402.74 0,-388.74 0,-388.74 0,-382.74 6,-376.74 12,-376.74 12,-376.74 168,-376.74 168,-376.74 174,-376.74 180,-382.74 180,-388.74 180,-388.74 180,-402.74 180,-402.74 180,-408.74 174,-414.74 168,-414.74"/>
+<text text-anchor="middle" x="90" y="-398.94" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">S3: apb_watchdog</text>
+<text text-anchor="middle" x="90" y="-386.94" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x0000_3000 &#160;PRIVILEGED</text>
+</g>
+<!-- DEC&#45;&gt;S3 -->
+<g id="edge5" class="edge">
+<title>DEC&#45;&gt;S3</title>
+<path fill="none" stroke="#ff4444" stroke-width="1.6" d="M449.28,-494.65C373.86,-474.1 247.35,-439.62 166.34,-417.54"/>
+<polygon fill="#ff4444" stroke="#ff4444" stroke-width="1.6" points="166.77,-414.03 156.2,-414.78 164.93,-420.79 166.77,-414.03"/>
+<text text-anchor="middle" x="291" y="-442.54" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">0x003</text>
+</g>
+<!-- S4 -->
+<g id="node8" class="node">
+<title>S4</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M782.5,-414.74C782.5,-414.74 673.5,-414.74 673.5,-414.74 667.5,-414.74 661.5,-408.74 661.5,-402.74 661.5,-402.74 661.5,-388.74 661.5,-388.74 661.5,-382.74 667.5,-376.74 673.5,-376.74 673.5,-376.74 782.5,-376.74 782.5,-376.74 788.5,-376.74 794.5,-382.74 794.5,-388.74 794.5,-388.74 794.5,-402.74 794.5,-402.74 794.5,-408.74 788.5,-414.74 782.5,-414.74"/>
+<text text-anchor="middle" x="728" y="-398.94" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">S4: irq_aggregator</text>
+<text text-anchor="middle" x="728" y="-386.94" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x0000_4000</text>
+</g>
+<!-- DEC&#45;&gt;S4 -->
+<g id="edge6" class="edge">
+<title>DEC&#45;&gt;S4</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" d="M555.45,-488.61C593.16,-468.53 647.44,-439.63 685.01,-419.63"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="687,-422.53 694.18,-414.75 683.71,-416.36 687,-422.53"/>
+<text text-anchor="middle" x="661" y="-442.54" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">0x004</text>
+</g>
+<!-- EU -->
+<g id="node11" class="node">
+<title>EU</title>
+<path fill="#5c1a1a" stroke="#ff4444" d="M961.5,-414.74C961.5,-414.74 846.5,-414.74 846.5,-414.74 840.5,-414.74 834.5,-408.74 834.5,-402.74 834.5,-402.74 834.5,-388.74 834.5,-388.74 834.5,-382.74 840.5,-376.74 846.5,-376.74 846.5,-376.74 961.5,-376.74 961.5,-376.74 967.5,-376.74 973.5,-382.74 973.5,-388.74 973.5,-388.74 973.5,-402.74 973.5,-402.74 973.5,-408.74 967.5,-414.74 961.5,-414.74"/>
+<text text-anchor="middle" x="904" y="-398.94" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#000000">PSLVERR</text>
+<text text-anchor="middle" x="904" y="-386.94" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#000000">Unmapped Address</text>
+</g>
+<!-- DEC&#45;&gt;EU -->
+<g id="edge7" class="edge">
+<title>DEC&#45;&gt;EU</title>
+<path fill="none" stroke="#ff4444" stroke-width="1.6" d="M572.39,-494.02C642.58,-473.43 758.28,-439.49 832.79,-417.63"/>
+<polygon fill="#ff4444" stroke="#ff4444" stroke-width="1.6" points="833.96,-420.94 842.57,-414.76 831.99,-414.22 833.96,-420.94"/>
+<text text-anchor="middle" x="777" y="-442.54" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">no match</text>
+</g>
+<!-- PRV -->
+<g id="node3" class="node">
+<title>PRV</title>
+<path fill="#3d1a5c" stroke="#cc88ff" d="M122.69,-321.72C122.69,-321.72 38.31,-291.76 38.31,-291.76 32.65,-289.75 32.65,-285.73 38.31,-283.72 38.31,-283.72 122.69,-253.76 122.69,-253.76 128.35,-251.75 139.65,-251.75 145.31,-253.76 145.31,-253.76 229.69,-283.72 229.69,-283.72 235.35,-285.73 235.35,-289.75 229.69,-291.76 229.69,-291.76 145.31,-321.72 145.31,-321.72 139.65,-323.73 128.35,-323.73 122.69,-321.72"/>
+<text text-anchor="middle" x="134" y="-290.94" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">pprot[0]==1?</text>
+<text text-anchor="middle" x="134" y="-278.94" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">Privileged?</text>
+</g>
+<!-- TMO -->
+<g id="node9" class="node">
+<title>TMO</title>
+<path fill="#1a3a5c" stroke="#4a9eff" d="M409.53,-186.22C409.53,-186.22 308.47,-155.26 308.47,-155.26 302.74,-153.5 302.74,-149.98 308.47,-148.22 308.47,-148.22 409.53,-117.26 409.53,-117.26 415.26,-115.5 426.74,-115.5 432.47,-117.26 432.47,-117.26 533.53,-148.22 533.53,-148.22 539.26,-149.98 539.26,-153.5 533.53,-155.26 533.53,-155.26 432.47,-186.22 432.47,-186.22 426.74,-187.98 415.26,-187.98 409.53,-186.22"/>
+<text text-anchor="middle" x="421" y="-154.94" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">Slave pready</text>
+<text text-anchor="middle" x="421" y="-142.94" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">within 16 cycles?</text>
+</g>
+<!-- PRV&#45;&gt;TMO -->
+<g id="edge10" class="edge">
+<title>PRV&#45;&gt;TMO</title>
+<path fill="none" stroke="#7bc142" stroke-width="1.6" d="M172.13,-263.18C196.95,-248.33 230.31,-229.29 261,-214.74 291.11,-200.47 325.45,-186.83 354.58,-176"/>
+<polygon fill="#7bc142" stroke="#7bc142" stroke-width="1.6" points="356.08,-179.18 364.25,-172.43 353.65,-172.61 356.08,-179.18"/>
+<text text-anchor="middle" x="268" y="-217.54" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">Yes</text>
+</g>
+<!-- EP -->
+<g id="node10" class="node">
+<title>EP</title>
+<path fill="#5c1a1a" stroke="#ff4444" d="M185.5,-170.74C185.5,-170.74 82.5,-170.74 82.5,-170.74 76.5,-170.74 70.5,-164.74 70.5,-158.74 70.5,-158.74 70.5,-144.74 70.5,-144.74 70.5,-138.74 76.5,-132.74 82.5,-132.74 82.5,-132.74 185.5,-132.74 185.5,-132.74 191.5,-132.74 197.5,-138.74 197.5,-144.74 197.5,-144.74 197.5,-158.74 197.5,-158.74 197.5,-164.74 191.5,-170.74 185.5,-170.74"/>
+<text text-anchor="middle" x="134" y="-154.94" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#000000">PSLVERR</text>
+<text text-anchor="middle" x="134" y="-142.94" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#000000">Privilege Violation</text>
+</g>
+<!-- PRV&#45;&gt;EP -->
+<g id="edge9" class="edge">
+<title>PRV&#45;&gt;EP</title>
+<path fill="none" stroke="#ff4444" stroke-width="1.6" d="M134,-249.41C134,-227.85 134,-201.15 134,-181.28"/>
+<polygon fill="#ff4444" stroke="#ff4444" stroke-width="1.6" points="137.5,-181.01 134,-171.01 130.5,-181.01 137.5,-181.01"/>
+<text text-anchor="middle" x="140.5" y="-217.54" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">No</text>
+</g>
+<!-- S0&#45;&gt;TMO -->
+<g id="edge11" class="edge">
+<title>S0&#45;&gt;TMO</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" d="M285.05,-376.55C308.59,-337.79 364.19,-246.27 396.52,-193.04"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="399.69,-194.57 401.89,-184.2 393.7,-190.93 399.69,-194.57"/>
+</g>
+<!-- S1&#45;&gt;TMO -->
+<g id="edge12" class="edge">
+<title>S1&#45;&gt;TMO</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" d="M421,-376.55C421,-339.37 421,-253.66 421,-199.75"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="424.5,-199.74 421,-189.74 417.5,-199.74 424.5,-199.74"/>
+</g>
+<!-- S2&#45;&gt;TMO -->
+<g id="edge13" class="edge">
+<title>S2&#45;&gt;TMO</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" d="M556.95,-376.55C533.41,-337.79 477.81,-246.27 445.48,-193.04"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="448.3,-190.93 440.11,-184.2 442.31,-194.57 448.3,-190.93"/>
+</g>
+<!-- S3&#45;&gt;PRV -->
+<g id="edge8" class="edge">
+<title>S3&#45;&gt;PRV</title>
+<path fill="none" stroke="#ff4444" stroke-width="1.6" d="M97.66,-376.28C102.88,-363.7 110.01,-346.53 116.57,-330.73"/>
+<polygon fill="#ff4444" stroke="#ff4444" stroke-width="1.6" points="119.96,-331.7 120.56,-321.12 113.49,-329.01 119.96,-331.7"/>
+</g>
+<!-- S4&#45;&gt;TMO -->
+<g id="edge14" class="edge">
+<title>S4&#45;&gt;TMO</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" d="M704.93,-376.55C653.44,-335.97 528.57,-237.53 462.92,-185.78"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="464.85,-182.85 454.83,-179.41 460.52,-188.35 464.85,-182.85"/>
+</g>
+<!-- ET -->
+<g id="node12" class="node">
+<title>ET</title>
+<path fill="#5c1a1a" stroke="#ff4444" d="M380,-45.87C380,-45.87 274,-45.87 274,-45.87 268,-45.87 262,-39.87 262,-33.87 262,-33.87 262,-19.87 262,-19.87 262,-13.87 268,-7.87 274,-7.87 274,-7.87 380,-7.87 380,-7.87 386,-7.87 392,-13.87 392,-19.87 392,-19.87 392,-33.87 392,-33.87 392,-39.87 386,-45.87 380,-45.87"/>
+<text text-anchor="middle" x="327" y="-30.07" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#000000">PSLVERR</text>
+<text text-anchor="middle" x="327" y="-18.07" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#000000">Timeout 16 cycles</text>
+</g>
+<!-- TMO&#45;&gt;ET -->
+<g id="edge16" class="edge">
+<title>TMO&#45;&gt;ET</title>
+<path fill="none" stroke="#ff4444" stroke-width="1.6" d="M398.01,-120.68C382.48,-100.38 362.17,-73.84 347.25,-54.34"/>
+<polygon fill="#ff4444" stroke="#ff4444" stroke-width="1.6" points="349.87,-52 341.01,-46.19 344.31,-56.26 349.87,-52"/>
+<text text-anchor="middle" x="397.5" y="-81.54" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">No &gt;16cyc</text>
+</g>
+<!-- OK -->
+<g id="node13" class="node">
+<title>OK</title>
+<ellipse fill="#2d5016" stroke="#7bc142" cx="515" cy="-26.87" rx="82.96" ry="26.74"/>
+<text text-anchor="middle" x="515" y="-30.07" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#000000">pready=1</text>
+<text text-anchor="middle" x="515" y="-18.07" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#000000">prdata returned</text>
+</g>
+<!-- TMO&#45;&gt;OK -->
+<g id="edge15" class="edge">
+<title>TMO&#45;&gt;OK</title>
+<path fill="none" stroke="#7bc142" stroke-width="1.6" d="M443.99,-120.68C457.76,-102.69 475.28,-79.8 489.47,-61.25"/>
+<polygon fill="#7bc142" stroke="#7bc142" stroke-width="1.6" points="492.43,-63.13 495.73,-53.06 486.87,-58.88 492.43,-63.13"/>
+<text text-anchor="middle" x="481" y="-81.54" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">Yes</text>
+</g>
+</g>
+</svg>
+</div>
+  </div>
+  <hr class="sep"/>
+  
+  <div class="sec" id="apb-uart">
+    <div class="sh"><span class="sn">05</span><h2>APB UART — apb_uart</h2><span class="st ti">0x0000_0000</span></div>
+    <div class="co">Full-duplex UART with separate TX and RX FIFOs. Infer <strong>fifo_depth</strong> from the FIFO labels. <code>baud_rate = clk / (16 × (baud_div+1))</code>; infer <code>default_div</code> from CTRL register description.</div><div class="dc"><svg style="max-width:100%;height:auto;background:#ffffff;border-radius:6px;" width="1342pt" height="628pt"
+ viewBox="0.00 0.00 1341.73 628.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(36 592)">
+<title>G</title>
+<polygon fill="#ffffff" stroke="none" points="-36,36 -36,-592 1305.73,-592 1305.73,36 -36,36"/>
+<g id="clust1" class="cluster">
+<title>cluster_tx</title>
+<polygon fill="#f0f4f8" stroke="#2a3448" points="78.5,-8 78.5,-157 1193.85,-157 1193.85,-8 78.5,-8"/>
+<text text-anchor="middle" x="636.17" y="-145" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">TX Path</text>
+</g>
+<g id="clust2" class="cluster">
+<title>cluster_rx</title>
+<polygon fill="#f0f4f8" stroke="#2a3448" points="147.09,-165 147.09,-313 1261.73,-313 1261.73,-165 147.09,-165"/>
+<text text-anchor="middle" x="704.41" y="-301" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">RX Path</text>
+</g>
+<g id="clust3" class="cluster">
+<title>cluster_ctl</title>
+<polygon fill="#f0f4f8" stroke="#2a3448" points="8,-321 8,-548 708.14,-548 708.14,-321 8,-321"/>
+<text text-anchor="middle" x="358.07" y="-536" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">Control Registers</text>
+</g>
+<!-- TXAPB -->
+<g id="node1" class="node">
+<title>TXAPB</title>
+<ellipse fill="#1a3a5c" stroke="#4a9eff" cx="206" cy="-111" rx="119.5" ry="18.27"/>
+<text text-anchor="middle" x="206" y="-108.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">APB Write 0x000 TXDATA</text>
+</g>
+<!-- TXFIFO -->
+<g id="node2" class="node">
+<title>TXFIFO</title>
+<path fill="#1a3a5c" stroke="#4a9eff" d="M613.57,-130C613.57,-130 533.57,-130 533.57,-130 527.57,-130 521.57,-124 521.57,-118 521.57,-118 521.57,-104 521.57,-104 521.57,-98 527.57,-92 533.57,-92 533.57,-92 613.57,-92 613.57,-92 619.57,-92 625.57,-98 625.57,-104 625.57,-104 625.57,-118 625.57,-118 625.57,-124 619.57,-130 613.57,-130"/>
+<text text-anchor="middle" x="573.57" y="-114.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">TX FIFO</text>
+<text text-anchor="middle" x="573.57" y="-102.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">16&#45;deep 8&#45;bit</text>
+</g>
+<!-- TXAPB&#45;&gt;TXFIFO -->
+<g id="edge1" class="edge">
+<title>TXAPB&#45;&gt;TXFIFO</title>
+<path fill="none" stroke="#4a9eff" stroke-width="1.6" d="M325.69,-111C387.52,-111 460.55,-111 511.07,-111"/>
+<polygon fill="#4a9eff" stroke="#4a9eff" stroke-width="1.6" points="511.18,-114.5 521.18,-111 511.18,-107.5 511.18,-114.5"/>
+</g>
+<!-- TXSER -->
+<g id="node3" class="node">
+<title>TXSER</title>
+<path fill="#2d5016" stroke="#7bc142" d="M940.14,-102C940.14,-102 802.14,-102 802.14,-102 796.14,-102 790.14,-96 790.14,-90 790.14,-90 790.14,-76 790.14,-76 790.14,-70 796.14,-64 802.14,-64 802.14,-64 940.14,-64 940.14,-64 946.14,-64 952.14,-70 952.14,-76 952.14,-76 952.14,-90 952.14,-90 952.14,-96 946.14,-102 940.14,-102"/>
+<text text-anchor="middle" x="871.14" y="-86.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">TX Serializer</text>
+<text text-anchor="middle" x="871.14" y="-74.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">start+8bit+parity+stop</text>
+</g>
+<!-- TXFIFO&#45;&gt;TXSER -->
+<g id="edge2" class="edge">
+<title>TXFIFO&#45;&gt;TXSER</title>
+<path fill="none" stroke="#7bc142" stroke-width="1.6" d="M625.72,-106.15C668.08,-102.14 729.32,-96.34 779.9,-91.55"/>
+<polygon fill="#7bc142" stroke="#7bc142" stroke-width="1.6" points="780.24,-95.03 789.86,-90.61 779.58,-88.06 780.24,-95.03"/>
+<text text-anchor="middle" x="745.14" y="-98.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">baud clk</text>
+</g>
+<!-- TXD -->
+<g id="node4" class="node">
+<title>TXD</title>
+<ellipse fill="#2d5016" stroke="#7bc142" cx="1134.94" cy="-83" rx="50.82" ry="18.27"/>
+<text text-anchor="middle" x="1134.94" y="-80.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">TXD pin</text>
+</g>
+<!-- TXSER&#45;&gt;TXD -->
+<g id="edge3" class="edge">
+<title>TXSER&#45;&gt;TXD</title>
+<path fill="none" stroke="#7bc142" stroke-width="1.6" d="M952.47,-83C991.46,-83 1037.52,-83 1073.48,-83"/>
+<polygon fill="#7bc142" stroke="#7bc142" stroke-width="1.6" points="1073.82,-86.5 1083.82,-83 1073.82,-79.5 1073.82,-86.5"/>
+</g>
+<!-- CTS -->
+<g id="node5" class="node">
+<title>CTS</title>
+<ellipse fill="#3d2b00" stroke="#ffa500" cx="573.57" cy="-34" rx="101.65" ry="18.27"/>
+<text text-anchor="middle" x="573.57" y="-31.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">CTS input (gates TX)</text>
+</g>
+<!-- CTS&#45;&gt;TXSER -->
+<g id="edge4" class="edge">
+<title>CTS&#45;&gt;TXSER</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" stroke-dasharray="5,2" d="M649.16,-46.36C688.98,-52.97 738.28,-61.14 780.21,-68.09"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="779.7,-71.55 790.14,-69.74 780.85,-64.65 779.7,-71.55"/>
+<text text-anchor="middle" x="745.14" y="-66.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">gate TX</text>
+</g>
+<!-- RXD -->
+<g id="node6" class="node">
+<title>RXD</title>
+<ellipse fill="#2d5016" stroke="#7bc142" cx="206" cy="-214" rx="50.82" ry="18.27"/>
+<text text-anchor="middle" x="206" y="-211.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">RXD pin</text>
+</g>
+<!-- RXDES -->
+<g id="node7" class="node">
+<title>RXDES</title>
+<path fill="#2d5016" stroke="#7bc142" d="M662.57,-233C662.57,-233 484.57,-233 484.57,-233 478.57,-233 472.57,-227 472.57,-221 472.57,-221 472.57,-207 472.57,-207 472.57,-201 478.57,-195 484.57,-195 484.57,-195 662.57,-195 662.57,-195 668.57,-195 674.57,-201 674.57,-207 674.57,-207 674.57,-221 674.57,-221 674.57,-227 668.57,-233 662.57,-233"/>
+<text text-anchor="middle" x="573.57" y="-217.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">RX Deserializer</text>
+<text text-anchor="middle" x="573.57" y="-205.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">16x oversample start&#45;bit verify</text>
+</g>
+<!-- RXD&#45;&gt;RXDES -->
+<g id="edge5" class="edge">
+<title>RXD&#45;&gt;RXDES</title>
+<path fill="none" stroke="#7bc142" stroke-width="1.6" d="M257.06,-214C309.61,-214 393.9,-214 462.15,-214"/>
+<polygon fill="#7bc142" stroke="#7bc142" stroke-width="1.6" points="462.52,-217.5 472.52,-214 462.52,-210.5 462.52,-217.5"/>
+</g>
+<!-- RXFIFO -->
+<g id="node8" class="node">
+<title>RXFIFO</title>
+<path fill="#1a3a5c" stroke="#4a9eff" d="M911.14,-233C911.14,-233 831.14,-233 831.14,-233 825.14,-233 819.14,-227 819.14,-221 819.14,-221 819.14,-207 819.14,-207 819.14,-201 825.14,-195 831.14,-195 831.14,-195 911.14,-195 911.14,-195 917.14,-195 923.14,-201 923.14,-207 923.14,-207 923.14,-221 923.14,-221 923.14,-227 917.14,-233 911.14,-233"/>
+<text text-anchor="middle" x="871.14" y="-217.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">RX FIFO</text>
+<text text-anchor="middle" x="871.14" y="-205.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">16&#45;deep 8&#45;bit</text>
+</g>
+<!-- RXDES&#45;&gt;RXFIFO -->
+<g id="edge6" class="edge">
+<title>RXDES&#45;&gt;RXFIFO</title>
+<path fill="none" stroke="#4a9eff" stroke-width="1.6" d="M674.64,-214C719.07,-214 769.95,-214 808.66,-214"/>
+<polygon fill="#4a9eff" stroke="#4a9eff" stroke-width="1.6" points="808.73,-217.5 818.73,-214 808.73,-210.5 808.73,-217.5"/>
+</g>
+<!-- RXAPB -->
+<g id="node9" class="node">
+<title>RXAPB</title>
+<ellipse fill="#1a3a5c" stroke="#4a9eff" cx="1134.94" cy="-191" rx="118.59" ry="18.27"/>
+<text text-anchor="middle" x="1134.94" y="-188.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">APB Read 0x004 RXDATA</text>
+</g>
+<!-- RXFIFO&#45;&gt;RXAPB -->
+<g id="edge7" class="edge">
+<title>RXFIFO&#45;&gt;RXAPB</title>
+<path fill="none" stroke="#4a9eff" stroke-width="1.6" d="M923.24,-209.51C951.21,-207.05 987.04,-203.91 1021.18,-200.91"/>
+<polygon fill="#4a9eff" stroke="#4a9eff" stroke-width="1.6" points="1021.58,-204.38 1031.24,-200.02 1020.97,-197.41 1021.58,-204.38"/>
+</g>
+<!-- RTS -->
+<g id="node10" class="node">
+<title>RTS</title>
+<ellipse fill="#3d2b00" stroke="#ffa500" cx="1134.94" cy="-268" rx="105.22" ry="18.27"/>
+<text text-anchor="middle" x="1134.94" y="-265.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">RTS output (FIFO full)</text>
+</g>
+<!-- RXFIFO&#45;&gt;RTS -->
+<g id="edge8" class="edge">
+<title>RXFIFO&#45;&gt;RTS</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" stroke-dasharray="5,2" d="M923.24,-224.54C961.07,-232.34 1013.27,-243.11 1056.25,-251.97"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="1055.61,-255.42 1066.11,-254.01 1057.03,-248.56 1055.61,-255.42"/>
+<text text-anchor="middle" x="984.14" y="-239.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">full</text>
+</g>
+<!-- CTRL -->
+<g id="node11" class="node">
+<title>CTRL</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M365,-521C365,-521 47,-521 47,-521 41,-521 35,-515 35,-509 35,-509 35,-495 35,-495 35,-489 41,-483 47,-483 47,-483 365,-483 365,-483 371,-483 377,-489 377,-495 377,-495 377,-509 377,-509 377,-515 371,-521 365,-521"/>
+<text text-anchor="middle" x="206" y="-505.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x00C CTRL (RW)</text>
+<text text-anchor="middle" x="206" y="-493.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">tx_en rx_en parity_en parity_odd stop2 baud_div[23:8]</text>
+</g>
+<!-- STAT -->
+<g id="node12" class="node">
+<title>STAT</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M384,-443C384,-443 28,-443 28,-443 22,-443 16,-437 16,-431 16,-431 16,-417 16,-417 16,-411 22,-405 28,-405 28,-405 384,-405 384,-405 390,-405 396,-411 396,-417 396,-417 396,-431 396,-431 396,-437 390,-443 384,-443"/>
+<text text-anchor="middle" x="206" y="-427.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x008 STATUS (RO)</text>
+<text text-anchor="middle" x="206" y="-415.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">tx_full tx_empty rx_full rx_empty frame_err parity_err overrun</text>
+</g>
+<!-- IRQR -->
+<g id="node13" class="node">
+<title>IRQR</title>
+<path fill="#3d1a5c" stroke="#cc88ff" d="M327,-365C327,-365 85,-365 85,-365 79,-365 73,-359 73,-353 73,-353 73,-341 73,-341 73,-335 79,-329 85,-329 85,-329 327,-329 327,-329 333,-329 339,-335 339,-341 339,-341 339,-353 339,-353 339,-359 333,-365 327,-365"/>
+<text text-anchor="middle" x="206" y="-344.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x010 IRQEN (RW) &#160;0x014 IRQSTAT (W1C)</text>
+</g>
+<!-- IRQO -->
+<g id="node14" class="node">
+<title>IRQO</title>
+<ellipse fill="#1a3a5c" stroke="#4a9eff" cx="573.57" cy="-347" rx="126.64" ry="18.27"/>
+<text text-anchor="middle" x="573.57" y="-344.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">uart_irq &#45;&gt; IRQ Aggregator</text>
+</g>
+<!-- IRQR&#45;&gt;IRQO -->
+<g id="edge9" class="edge">
+<title>IRQR&#45;&gt;IRQO</title>
+<path fill="none" stroke="#cc88ff" stroke-width="1.6" d="M339.24,-347C370.87,-347 404.7,-347 436.51,-347"/>
+<polygon fill="#cc88ff" stroke="#cc88ff" stroke-width="1.6" points="436.76,-350.5 446.76,-347 436.76,-343.5 436.76,-350.5"/>
+</g>
+</g>
+</svg>
+<div class="rtw"><div class="rtl">Register Map</div><table><tr><th>Offset</th><th>Name</th><th>Access</th><th>Description</th></tr><tr><td>0x000</td><td>TXDATA</td><td><span class="wo">WO</span></td><td>Push byte to TX FIFO</td></tr><tr><td>0x004</td><td>RXDATA</td><td><span class="ro">RO</span></td><td>Pop byte from RX FIFO</td></tr><tr><td>0x008</td><td>STATUS</td><td><span class="ro">RO</span></td><td>[0]=tx_full [1]=tx_empty [2]=rx_full [3]=rx_empty [4]=frame_err [5]=parity_err [6]=overrun [7]=cts_n</td></tr><tr><td>0x00C</td><td>CTRL</td><td><span class="rw">RW</span></td><td>[0]=tx_en [1]=rx_en [2]=parity_en [3]=parity_odd [4]=stop2 [23:8]=baud_div</td></tr><tr><td>0x010</td><td>IRQEN</td><td><span class="rw">RW</span></td><td>Interrupt enable mask (mirrors STATUS bits)</td></tr><tr><td>0x014</td><td>IRQSTAT</td><td><span class="w1c">W1C</span></td><td>Interrupt status — write 1 to clear</td></tr></table></div></div>
+  </div>
+  <hr class="sep"/>
+  
+  <div class="sec" id="apb-gpio">
+    <div class="sh"><span class="sn">06</span><h2>APB GPIO — apb_gpio</h2><span class="st ti">0x0000_1000</span></div>
+    <div class="co">32 bidirectional pins with 3-stage input debounce and per-pin edge/level IRQ. Infer <strong>gpio_width</strong> from the pin bus label.</div><div class="dc"><svg style="max-width:100%;height:auto;background:#ffffff;border-radius:6px;" width="1562pt" height="570pt"
+ viewBox="0.00 0.00 1561.65 570.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(36 534)">
+<title>G</title>
+<polygon fill="#ffffff" stroke="none" points="-36,36 -36,-534 1525.65,-534 1525.65,36 -36,36"/>
+<g id="clust1" class="cluster">
+<title>cluster_in</title>
+<polygon fill="#f0f4f8" stroke="#2a3448" points="18.74,-167 18.74,-252 747.09,-252 747.09,-167 18.74,-167"/>
+<text text-anchor="middle" x="382.92" y="-240" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">Input Path</text>
+</g>
+<g id="clust2" class="cluster">
+<title>cluster_out</title>
+<polygon fill="#f0f4f8" stroke="#2a3448" points="55.5,-260 55.5,-409 547.09,-409 547.09,-260 55.5,-260"/>
+<text text-anchor="middle" x="301.3" y="-397" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">Output Path</text>
+</g>
+<g id="clust3" class="cluster">
+<title>cluster_alt</title>
+<polygon fill="#f0f4f8" stroke="#2a3448" points="8,-417 8,-490 276,-490 276,-417 8,-417"/>
+<text text-anchor="middle" x="142" y="-478" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">Alt Function</text>
+</g>
+<g id="clust4" class="cluster">
+<title>cluster_irq</title>
+<polygon fill="#f0f4f8" stroke="#2a3448" points="582.09,-8 582.09,-159 1481.65,-159 1481.65,-8 582.09,-8"/>
+<text text-anchor="middle" x="1031.87" y="-147" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">IRQ Detection</text>
+</g>
+<!-- PINS -->
+<g id="node1" class="node">
+<title>PINS</title>
+<ellipse fill="#3d2b00" stroke="#ffa500" cx="142" cy="-207" rx="115.02" ry="18.27"/>
+<text text-anchor="middle" x="142" y="-204.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">GPIO[31:0] bidirectional</text>
+</g>
+<!-- SYNC -->
+<g id="node2" class="node">
+<title>SYNC</title>
+<path fill="#1a3a5c" stroke="#4a9eff" d="M515.05,-223C515.05,-223 375.05,-223 375.05,-223 369.05,-223 363.05,-217 363.05,-211 363.05,-211 363.05,-199 363.05,-199 363.05,-193 369.05,-187 375.05,-187 375.05,-187 515.05,-187 515.05,-187 521.05,-187 527.05,-193 527.05,-199 527.05,-199 527.05,-211 527.05,-211 527.05,-217 521.05,-223 515.05,-223"/>
+<text text-anchor="middle" x="445.05" y="-202.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">3&#45;Stage Sync Debounce</text>
+</g>
+<!-- PINS&#45;&gt;SYNC -->
+<g id="edge1" class="edge">
+<title>PINS&#45;&gt;SYNC</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" d="M257.24,-206.24C288.77,-206.03 322.56,-205.81 352.62,-205.61"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="352.68,-209.11 362.66,-205.54 352.64,-202.11 352.68,-209.11"/>
+<text text-anchor="middle" x="309.5" y="-208.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">raw</text>
+</g>
+<!-- DIN -->
+<g id="node3" class="node">
+<title>DIN</title>
+<path fill="#2d5016" stroke="#7bc142" d="M727.09,-216C727.09,-216 608.09,-216 608.09,-216 602.09,-216 596.09,-210 596.09,-204 596.09,-204 596.09,-190 596.09,-190 596.09,-184 602.09,-178 608.09,-178 608.09,-178 727.09,-178 727.09,-178 733.09,-178 739.09,-184 739.09,-190 739.09,-190 739.09,-204 739.09,-204 739.09,-210 733.09,-216 727.09,-216"/>
+<text text-anchor="middle" x="667.59" y="-200.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x000 DATA_IN (RO)</text>
+<text text-anchor="middle" x="667.59" y="-188.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">Debounced values</text>
+</g>
+<!-- SYNC&#45;&gt;DIN -->
+<g id="edge2" class="edge">
+<title>SYNC&#45;&gt;DIN</title>
+<path fill="none" stroke="#4a9eff" stroke-width="1.6" d="M527.23,-202.06C546.28,-201.36 566.58,-200.63 585.62,-199.94"/>
+<polygon fill="#4a9eff" stroke="#4a9eff" stroke-width="1.6" points="585.89,-203.43 595.75,-199.57 585.63,-196.43 585.89,-203.43"/>
+</g>
+<!-- DET -->
+<g id="node8" class="node">
+<title>DET</title>
+<path fill="#3d1a5c" stroke="#cc88ff" d="M946.09,-131C946.09,-131 808.09,-131 808.09,-131 802.09,-131 796.09,-125 796.09,-119 796.09,-119 796.09,-107 796.09,-107 796.09,-101 802.09,-95 808.09,-95 808.09,-95 946.09,-95 946.09,-95 952.09,-95 958.09,-101 958.09,-107 958.09,-107 958.09,-119 958.09,-119 958.09,-125 952.09,-131 946.09,-131"/>
+<text text-anchor="middle" x="877.09" y="-110.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">Edge/Level Detect Logic</text>
+</g>
+<!-- DIN&#45;&gt;DET -->
+<g id="edge5" class="edge">
+<title>DIN&#45;&gt;DET</title>
+<path fill="none" stroke="#4a9eff" stroke-width="1.6" d="M723.66,-177.88C731.56,-174.99 739.55,-171.98 747.09,-169 773.75,-158.47 803.09,-145.82 827.05,-135.21"/>
+<polygon fill="#4a9eff" stroke="#4a9eff" stroke-width="1.6" points="828.57,-138.36 836.28,-131.1 825.73,-131.97 828.57,-138.36"/>
+</g>
+<!-- DOUT -->
+<g id="node4" class="node">
+<title>DOUT</title>
+<path fill="#2d5016" stroke="#7bc142" d="M208.5,-382C208.5,-382 75.5,-382 75.5,-382 69.5,-382 63.5,-376 63.5,-370 63.5,-370 63.5,-358 63.5,-358 63.5,-352 69.5,-346 75.5,-346 75.5,-346 208.5,-346 208.5,-346 214.5,-346 220.5,-352 220.5,-358 220.5,-358 220.5,-370 220.5,-370 220.5,-376 214.5,-382 208.5,-382"/>
+<text text-anchor="middle" x="142" y="-361.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x004 DATA_OUT (RW)</text>
+</g>
+<!-- POUT -->
+<g id="node6" class="node">
+<title>POUT</title>
+<ellipse fill="#3d2b00" stroke="#ffa500" cx="445.05" cy="-335" rx="94.09" ry="18.27"/>
+<text text-anchor="middle" x="445.05" y="-332.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">GPIO pins (output)</text>
+</g>
+<!-- DOUT&#45;&gt;POUT -->
+<g id="edge3" class="edge">
+<title>DOUT&#45;&gt;POUT</title>
+<path fill="none" stroke="#7bc142" stroke-width="1.6" d="M220.53,-356.53C260.12,-352.72 308.6,-348.05 350.28,-344.03"/>
+<polygon fill="#7bc142" stroke="#7bc142" stroke-width="1.6" points="350.83,-347.5 360.44,-343.05 350.15,-340.53 350.83,-347.5"/>
+<text text-anchor="middle" x="309.5" y="-351.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">dir=1</text>
+</g>
+<!-- DIR -->
+<g id="node5" class="node">
+<title>DIR</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M196.5,-306C196.5,-306 87.5,-306 87.5,-306 81.5,-306 75.5,-300 75.5,-294 75.5,-294 75.5,-280 75.5,-280 75.5,-274 81.5,-268 87.5,-268 87.5,-268 196.5,-268 196.5,-268 202.5,-268 208.5,-274 208.5,-280 208.5,-280 208.5,-294 208.5,-294 208.5,-300 202.5,-306 196.5,-306"/>
+<text text-anchor="middle" x="142" y="-290.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x008 DIR (RW)</text>
+<text text-anchor="middle" x="142" y="-278.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">1=output 0=input</text>
+</g>
+<!-- DIR&#45;&gt;POUT -->
+<g id="edge4" class="edge">
+<title>DIR&#45;&gt;POUT</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" stroke-dasharray="5,2" d="M208.69,-297.47C253.6,-304.63 313.45,-314.18 361.56,-321.85"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="361.21,-325.34 371.64,-323.46 362.32,-318.42 361.21,-325.34"/>
+<text text-anchor="middle" x="309.5" y="-317.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">tristate</text>
+</g>
+<!-- ALT -->
+<g id="node7" class="node">
+<title>ALT</title>
+<path fill="#3d1a5c" stroke="#cc88ff" d="M256,-463C256,-463 28,-463 28,-463 22,-463 16,-457 16,-451 16,-451 16,-437 16,-437 16,-431 22,-425 28,-425 28,-425 256,-425 256,-425 262,-425 268,-431 268,-437 268,-437 268,-451 268,-451 268,-457 262,-463 256,-463"/>
+<text text-anchor="middle" x="142" y="-447.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x00C ALT_LO (RW) &#160;0x010 ALT_HI (RW)</text>
+<text text-anchor="middle" x="142" y="-435.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">2&#45;bit alt function select per pin</text>
+</g>
+<!-- IST -->
+<g id="node12" class="node">
+<title>IST</title>
+<path fill="#3d1a5c" stroke="#cc88ff" d="M1156.09,-75C1156.09,-75 1021.09,-75 1021.09,-75 1015.09,-75 1009.09,-69 1009.09,-63 1009.09,-63 1009.09,-51 1009.09,-51 1009.09,-45 1015.09,-39 1021.09,-39 1021.09,-39 1156.09,-39 1156.09,-39 1162.09,-39 1168.09,-45 1168.09,-51 1168.09,-51 1168.09,-63 1168.09,-63 1168.09,-69 1162.09,-75 1156.09,-75"/>
+<text text-anchor="middle" x="1088.59" y="-54.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x020 IRQ_STAT (W1C)</text>
+</g>
+<!-- DET&#45;&gt;IST -->
+<g id="edge8" class="edge">
+<title>DET&#45;&gt;IST</title>
+<path fill="none" stroke="#cc88ff" stroke-width="1.6" d="M945.53,-94.97C966.08,-89.48 988.83,-83.4 1010,-77.74"/>
+<polygon fill="#cc88ff" stroke="#cc88ff" stroke-width="1.6" points="1011.16,-81.05 1019.92,-75.09 1009.35,-74.29 1011.16,-81.05"/>
+</g>
+<!-- IEDG -->
+<g id="node9" class="node">
+<title>IEDG</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M733.09,-132C733.09,-132 602.09,-132 602.09,-132 596.09,-132 590.09,-126 590.09,-120 590.09,-120 590.09,-106 590.09,-106 590.09,-100 596.09,-94 602.09,-94 602.09,-94 733.09,-94 733.09,-94 739.09,-94 745.09,-100 745.09,-106 745.09,-106 745.09,-120 745.09,-120 745.09,-126 739.09,-132 733.09,-132"/>
+<text text-anchor="middle" x="667.59" y="-116.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x018 IRQ_EDGE (RW)</text>
+<text text-anchor="middle" x="667.59" y="-104.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0=level 1=edge</text>
+</g>
+<!-- IEDG&#45;&gt;DET -->
+<g id="edge6" class="edge">
+<title>IEDG&#45;&gt;DET</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" d="M745.27,-113C758.42,-113 772.2,-113 785.68,-113"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="785.91,-116.5 795.91,-113 785.91,-109.5 785.91,-116.5"/>
+</g>
+<!-- IPOL -->
+<g id="node10" class="node">
+<title>IPOL</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M728.09,-54C728.09,-54 607.09,-54 607.09,-54 601.09,-54 595.09,-48 595.09,-42 595.09,-42 595.09,-28 595.09,-28 595.09,-22 601.09,-16 607.09,-16 607.09,-16 728.09,-16 728.09,-16 734.09,-16 740.09,-22 740.09,-28 740.09,-28 740.09,-42 740.09,-42 740.09,-48 734.09,-54 728.09,-54"/>
+<text text-anchor="middle" x="667.59" y="-38.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x01C IRQ_POL (RW)</text>
+<text text-anchor="middle" x="667.59" y="-26.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0=low/fall 1=hi/rise</text>
+</g>
+<!-- IPOL&#45;&gt;DET -->
+<g id="edge7" class="edge">
+<title>IPOL&#45;&gt;DET</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" d="M719.35,-54.08C749.36,-65.36 787.46,-79.68 818.58,-91.38"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="817.4,-94.68 827.99,-94.92 819.86,-88.13 817.4,-94.68"/>
+</g>
+<!-- IEN -->
+<g id="node11" class="node">
+<title>IEN</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M934.09,-55C934.09,-55 820.09,-55 820.09,-55 814.09,-55 808.09,-49 808.09,-43 808.09,-43 808.09,-31 808.09,-31 808.09,-25 814.09,-19 820.09,-19 820.09,-19 934.09,-19 934.09,-19 940.09,-19 946.09,-25 946.09,-31 946.09,-31 946.09,-43 946.09,-43 946.09,-49 940.09,-55 934.09,-55"/>
+<text text-anchor="middle" x="877.09" y="-34.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x014 IRQ_EN (RW)</text>
+</g>
+<!-- IEN&#45;&gt;IST -->
+<g id="edge9" class="edge">
+<title>IEN&#45;&gt;IST</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" stroke-dasharray="5,2" d="M946.11,-43.49C962.89,-45.1 981.11,-46.83 998.71,-48.52"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="998.71,-52.03 1008.99,-49.5 999.37,-45.06 998.71,-52.03"/>
+</g>
+<!-- GOUT -->
+<g id="node13" class="node">
+<title>GOUT</title>
+<ellipse fill="#1a3a5c" stroke="#4a9eff" cx="1346.37" cy="-57" rx="127.06" ry="18.27"/>
+<text text-anchor="middle" x="1346.37" y="-54.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">gpio_irq &#45;&gt; IRQ Aggregator</text>
+</g>
+<!-- IST&#45;&gt;GOUT -->
+<g id="edge10" class="edge">
+<title>IST&#45;&gt;GOUT</title>
+<path fill="none" stroke="#cc88ff" stroke-width="1.6" d="M1168.42,-57C1181.29,-57 1194.95,-57 1208.74,-57"/>
+<polygon fill="#cc88ff" stroke="#cc88ff" stroke-width="1.6" points="1208.8,-60.5 1218.8,-57 1208.8,-53.5 1208.8,-60.5"/>
+</g>
+</g>
+</svg>
+<div class="rtw"><div class="rtl">Register Map</div><table><tr><th>Offset</th><th>Name</th><th>Access</th><th>Description</th></tr><tr><td>0x000</td><td>DATA_IN</td><td><span class="ro">RO</span></td><td>Debounced input values</td></tr><tr><td>0x004</td><td>DATA_OUT</td><td><span class="rw">RW</span></td><td>Output data</td></tr><tr><td>0x008</td><td>DIR</td><td><span class="rw">RW</span></td><td>Direction: 1=output, 0=input per pin</td></tr><tr><td>0x00C</td><td>ALT_LO</td><td><span class="rw">RW</span></td><td>2-bit alt func, pins [15:0]</td></tr><tr><td>0x010</td><td>ALT_HI</td><td><span class="rw">RW</span></td><td>2-bit alt func, pins [31:16]</td></tr><tr><td>0x014</td><td>IRQ_EN</td><td><span class="rw">RW</span></td><td>Enable per pin</td></tr><tr><td>0x018</td><td>IRQ_EDGE</td><td><span class="rw">RW</span></td><td>0=level, 1=edge</td></tr><tr><td>0x01C</td><td>IRQ_POL</td><td><span class="rw">RW</span></td><td>0=low/fall, 1=high/rise</td></tr><tr><td>0x020</td><td>IRQ_STAT</td><td><span class="w1c">W1C</span></td><td>Pending status — write 1 to clear</td></tr></table></div></div>
+  </div>
+  <hr class="sep"/>
+  
+  <div class="sec" id="apb-timer">
+    <div class="sh"><span class="sn">07</span><h2>APB Timer — apb_timer</h2><span class="st ti">0x0000_2000</span></div>
+    <div class="co">Two independent 32-bit down-counters with 8-bit prescaler and PWM output. Infer <strong>channels</strong> from the Channel 0 / Channel 1 subgraphs.</div><div class="dc"><svg style="max-width:100%;height:auto;background:#ffffff;border-radius:6px;" width="1600pt" height="586pt"
+ viewBox="0.00 0.00 1600.04 586.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(36 550)">
+<title>G</title>
+<polygon fill="#ffffff" stroke="none" points="-36,36 -36,-550 1564.04,-550 1564.04,36 -36,36"/>
+<g id="clust1" class="cluster">
+<title>cluster_ch0</title>
+<polygon fill="#f0f4f8" stroke="#2a3448" points="8,-8 8,-231 1507.76,-231 1507.76,-8 8,-8"/>
+<text text-anchor="middle" x="757.88" y="-219" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">Channel 0 (offset 0x000)</text>
+</g>
+<g id="clust2" class="cluster">
+<title>cluster_ch1</title>
+<polygon fill="#f0f4f8" stroke="#2a3448" points="78.5,-283 78.5,-506 1478.06,-506 1478.06,-283 78.5,-283"/>
+<text text-anchor="middle" x="778.28" y="-494" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">Channel 1 (offset 0x020)</text>
+</g>
+<!-- L0 -->
+<g id="node1" class="node">
+<title>L0</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M568,-177C568,-177 383,-177 383,-177 377,-177 371,-171 371,-165 371,-165 371,-153 371,-153 371,-147 377,-141 383,-141 383,-141 568,-141 568,-141 574,-141 580,-147 580,-153 580,-153 580,-165 580,-165 580,-171 574,-177 568,-177"/>
+<text text-anchor="middle" x="475.5" y="-156.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x000 LOAD (RW) &#160;32&#45;bit reload</text>
+</g>
+<!-- CNT0 -->
+<g id="node4" class="node">
+<title>CNT0</title>
+<path fill="#2d5016" stroke="#7bc142" d="M819,-128C819,-128 698,-128 698,-128 692,-128 686,-122 686,-116 686,-116 686,-104 686,-104 686,-98 692,-92 698,-92 698,-92 819,-92 819,-92 825,-92 831,-98 831,-104 831,-104 831,-116 831,-116 831,-122 825,-128 819,-128"/>
+<text text-anchor="middle" x="758.5" y="-107.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">32&#45;bit Down&#45;Counter</text>
+</g>
+<!-- L0&#45;&gt;CNT0 -->
+<g id="edge3" class="edge">
+<title>L0&#45;&gt;CNT0</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" d="M579.94,-140.96C611.57,-135.45 645.9,-129.46 675.87,-124.23"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="676.61,-127.66 685.86,-122.49 675.41,-120.76 676.61,-127.66"/>
+<text text-anchor="middle" x="633" y="-138.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">reload on TC</text>
+</g>
+<!-- C0 -->
+<g id="node2" class="node">
+<title>C0</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M271,-102C271,-102 28,-102 28,-102 22,-102 16,-96 16,-90 16,-90 16,-76 16,-76 16,-70 22,-64 28,-64 28,-64 271,-64 271,-64 277,-64 283,-70 283,-76 283,-76 283,-90 283,-90 283,-96 277,-102 271,-102"/>
+<text text-anchor="middle" x="149.5" y="-86.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x008 CTRL (RW)</text>
+<text text-anchor="middle" x="149.5" y="-74.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">en periodic irq_en pwm_en prescale[11:4]</text>
+</g>
+<!-- P0 -->
+<g id="node3" class="node">
+<title>P0</title>
+<path fill="#1a3a5c" stroke="#4a9eff" d="M546.5,-101C546.5,-101 404.5,-101 404.5,-101 398.5,-101 392.5,-95 392.5,-89 392.5,-89 392.5,-77 392.5,-77 392.5,-71 398.5,-65 404.5,-65 404.5,-65 546.5,-65 546.5,-65 552.5,-65 558.5,-71 558.5,-77 558.5,-77 558.5,-89 558.5,-89 558.5,-95 552.5,-101 546.5,-101"/>
+<text text-anchor="middle" x="475.5" y="-80.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">8&#45;bit Prescaler div 1&#45;256</text>
+</g>
+<!-- C0&#45;&gt;P0 -->
+<g id="edge1" class="edge">
+<title>C0&#45;&gt;P0</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" d="M283.22,-83C316.35,-83 351.17,-83 381.88,-83"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="382.13,-86.5 392.13,-83 382.13,-79.5 382.13,-86.5"/>
+<text text-anchor="middle" x="327" y="-85.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">prescale</text>
+</g>
+<!-- P0&#45;&gt;CNT0 -->
+<g id="edge2" class="edge">
+<title>P0&#45;&gt;CNT0</title>
+<path fill="none" stroke="#4a9eff" stroke-width="1.6" d="M558.86,-86.06C590.82,-87.73 627.68,-90.25 661,-94 665.81,-94.54 670.74,-95.16 675.72,-95.83"/>
+<polygon fill="#4a9eff" stroke="#4a9eff" stroke-width="1.6" points="675.56,-99.34 685.95,-97.28 676.54,-92.41 675.56,-99.34"/>
+<text text-anchor="middle" x="633" y="-96.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">tick</text>
+</g>
+<!-- V0 -->
+<g id="node5" class="node">
+<title>V0</title>
+<path fill="#2d5016" stroke="#7bc142" d="M1105,-52C1105,-52 998,-52 998,-52 992,-52 986,-46 986,-40 986,-40 986,-28 986,-28 986,-22 992,-16 998,-16 998,-16 1105,-16 1105,-16 1111,-16 1117,-22 1117,-28 1117,-28 1117,-40 1117,-40 1117,-46 1111,-52 1105,-52"/>
+<text text-anchor="middle" x="1051.5" y="-31.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x004 VALUE (RO)</text>
+</g>
+<!-- CNT0&#45;&gt;V0 -->
+<g id="edge4" class="edge">
+<title>CNT0&#45;&gt;V0</title>
+<path fill="none" stroke="#7bc142" stroke-width="1.6" d="M828.46,-91.99C872.78,-80.42 930.33,-65.38 975.74,-53.53"/>
+<polygon fill="#7bc142" stroke="#7bc142" stroke-width="1.6" points="976.73,-56.88 985.53,-50.97 974.97,-50.11 976.73,-56.88"/>
+</g>
+<!-- CMP0 -->
+<g id="node6" class="node">
+<title>CMP0</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M1160,-128C1160,-128 943,-128 943,-128 937,-128 931,-122 931,-116 931,-116 931,-104 931,-104 931,-98 937,-92 943,-92 943,-92 1160,-92 1160,-92 1166,-92 1172,-98 1172,-104 1172,-104 1172,-116 1172,-116 1172,-122 1166,-128 1160,-128"/>
+<text text-anchor="middle" x="1051.5" y="-107.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x00C COMPARE (RW) PWM threshold</text>
+</g>
+<!-- CNT0&#45;&gt;CMP0 -->
+<g id="edge6" class="edge">
+<title>CNT0&#45;&gt;CMP0</title>
+<path fill="none" stroke="#7bc142" stroke-width="1.6" stroke-dasharray="5,2" d="M831.06,-110C858.12,-110 889.84,-110 920.61,-110"/>
+<polygon fill="#7bc142" stroke="#7bc142" stroke-width="1.6" points="921,-113.5 931,-110 921,-106.5 921,-113.5"/>
+</g>
+<!-- IRQ0 -->
+<g id="node7" class="node">
+<title>IRQ0</title>
+<path fill="#3d1a5c" stroke="#cc88ff" d="M1159.5,-204C1159.5,-204 943.5,-204 943.5,-204 937.5,-204 931.5,-198 931.5,-192 931.5,-192 931.5,-180 931.5,-180 931.5,-174 937.5,-168 943.5,-168 943.5,-168 1159.5,-168 1159.5,-168 1165.5,-168 1171.5,-174 1171.5,-180 1171.5,-180 1171.5,-192 1171.5,-192 1171.5,-198 1165.5,-204 1159.5,-204"/>
+<text text-anchor="middle" x="1051.5" y="-183.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x010 IRQSTAT (W1C) Terminal count</text>
+</g>
+<!-- CNT0&#45;&gt;IRQ0 -->
+<g id="edge5" class="edge">
+<title>CNT0&#45;&gt;IRQ0</title>
+<path fill="none" stroke="#cc88ff" stroke-width="1.6" d="M828.46,-128.01C871.43,-139.23 926.85,-153.71 971.57,-165.39"/>
+<polygon fill="#cc88ff" stroke="#cc88ff" stroke-width="1.6" points="970.97,-168.85 981.53,-167.99 972.74,-162.07 970.97,-168.85"/>
+<text text-anchor="middle" x="881" y="-150.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">TC cnt==0</text>
+</g>
+<!-- PWM0 -->
+<g id="node8" class="node">
+<title>PWM0</title>
+<ellipse fill="#2d5016" stroke="#7bc142" cx="1396.52" cy="-110" rx="103.48" ry="26.74"/>
+<text text-anchor="middle" x="1396.52" y="-113.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">CH0 PWM out</text>
+<text text-anchor="middle" x="1396.52" y="-101.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">cnt&gt;compare&#45;&gt;HIGH</text>
+</g>
+<!-- CMP0&#45;&gt;PWM0 -->
+<g id="edge7" class="edge">
+<title>CMP0&#45;&gt;PWM0</title>
+<path fill="none" stroke="#7bc142" stroke-width="1.6" d="M1172.47,-110C1208.34,-110 1247.53,-110 1282.91,-110"/>
+<polygon fill="#7bc142" stroke="#7bc142" stroke-width="1.6" points="1283.27,-113.5 1293.27,-110 1283.27,-106.5 1283.27,-113.5"/>
+<text text-anchor="middle" x="1218.5" y="-112.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">cnt&gt;cmp</text>
+</g>
+<!-- TIRQ -->
+<g id="node17" class="node">
+<title>TIRQ</title>
+<ellipse fill="#1a3a5c" stroke="#4a9eff" cx="1396.52" cy="-257" rx="131.54" ry="18.27"/>
+<text text-anchor="middle" x="1396.52" y="-254.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">timer_irq &#45;&gt; IRQ Aggregator</text>
+</g>
+<!-- IRQ0&#45;&gt;TIRQ -->
+<g id="edge15" class="edge">
+<title>IRQ0&#45;&gt;TIRQ</title>
+<path fill="none" stroke="#cc88ff" stroke-width="1.6" d="M1126.02,-204.09C1166.84,-213.85 1218.59,-225.75 1265,-235 1276.07,-237.21 1287.69,-239.38 1299.25,-241.44"/>
+<polygon fill="#cc88ff" stroke="#cc88ff" stroke-width="1.6" points="1298.93,-244.94 1309.38,-243.23 1300.14,-238.04 1298.93,-244.94"/>
+</g>
+<!-- L1 -->
+<g id="node9" class="node">
+<title>L1</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M528,-441C528,-441 423,-441 423,-441 417,-441 411,-435 411,-429 411,-429 411,-417 411,-417 411,-411 417,-405 423,-405 423,-405 528,-405 528,-405 534,-405 540,-411 540,-417 540,-417 540,-429 540,-429 540,-435 534,-441 528,-441"/>
+<text text-anchor="middle" x="475.5" y="-420.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x020 LOAD (RW)</text>
+</g>
+<!-- CNT1 -->
+<g id="node12" class="node">
+<title>CNT1</title>
+<path fill="#2d5016" stroke="#7bc142" d="M819,-403C819,-403 698,-403 698,-403 692,-403 686,-397 686,-391 686,-391 686,-379 686,-379 686,-373 692,-367 698,-367 698,-367 819,-367 819,-367 825,-367 831,-373 831,-379 831,-379 831,-391 831,-391 831,-397 825,-403 819,-403"/>
+<text text-anchor="middle" x="758.5" y="-382.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">32&#45;bit Down&#45;Counter</text>
+</g>
+<!-- L1&#45;&gt;CNT1 -->
+<g id="edge10" class="edge">
+<title>L1&#45;&gt;CNT1</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" d="M540.26,-414.38C580.45,-408.94 632.72,-401.87 675.91,-396.03"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="676.39,-399.5 685.83,-394.69 675.45,-392.56 676.39,-399.5"/>
+</g>
+<!-- C1 -->
+<g id="node10" class="node">
+<title>C1</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M200.5,-365C200.5,-365 98.5,-365 98.5,-365 92.5,-365 86.5,-359 86.5,-353 86.5,-353 86.5,-341 86.5,-341 86.5,-335 92.5,-329 98.5,-329 98.5,-329 200.5,-329 200.5,-329 206.5,-329 212.5,-335 212.5,-341 212.5,-341 212.5,-353 212.5,-353 212.5,-359 206.5,-365 200.5,-365"/>
+<text text-anchor="middle" x="149.5" y="-344.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x028 CTRL (RW)</text>
+</g>
+<!-- P1 -->
+<g id="node11" class="node">
+<title>P1</title>
+<path fill="#1a3a5c" stroke="#4a9eff" d="M517.5,-365C517.5,-365 433.5,-365 433.5,-365 427.5,-365 421.5,-359 421.5,-353 421.5,-353 421.5,-341 421.5,-341 421.5,-335 427.5,-329 433.5,-329 433.5,-329 517.5,-329 517.5,-329 523.5,-329 529.5,-335 529.5,-341 529.5,-341 529.5,-353 529.5,-353 529.5,-359 523.5,-365 517.5,-365"/>
+<text text-anchor="middle" x="475.5" y="-344.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">8&#45;bit Prescaler</text>
+</g>
+<!-- C1&#45;&gt;P1 -->
+<g id="edge8" class="edge">
+<title>C1&#45;&gt;P1</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" d="M212.59,-347C269.7,-347 354,-347 411.43,-347"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="411.47,-350.5 421.47,-347 411.47,-343.5 411.47,-350.5"/>
+</g>
+<!-- P1&#45;&gt;CNT1 -->
+<g id="edge9" class="edge">
+<title>P1&#45;&gt;CNT1</title>
+<path fill="none" stroke="#4a9eff" stroke-width="1.6" d="M529.68,-354.19C570.89,-359.76 628.71,-367.58 675.78,-373.95"/>
+<polygon fill="#4a9eff" stroke="#4a9eff" stroke-width="1.6" points="675.58,-377.45 685.96,-375.33 676.52,-370.52 675.58,-377.45"/>
+</g>
+<!-- V1 -->
+<g id="node13" class="node">
+<title>V1</title>
+<path fill="#2d5016" stroke="#7bc142" d="M1105,-327C1105,-327 998,-327 998,-327 992,-327 986,-321 986,-315 986,-315 986,-303 986,-303 986,-297 992,-291 998,-291 998,-291 1105,-291 1105,-291 1111,-291 1117,-297 1117,-303 1117,-303 1117,-315 1117,-315 1117,-321 1111,-327 1105,-327"/>
+<text text-anchor="middle" x="1051.5" y="-306.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x024 VALUE (RO)</text>
+</g>
+<!-- CNT1&#45;&gt;V1 -->
+<g id="edge11" class="edge">
+<title>CNT1&#45;&gt;V1</title>
+<path fill="none" stroke="#7bc142" stroke-width="1.6" d="M828.46,-366.99C872.78,-355.42 930.33,-340.38 975.74,-328.53"/>
+<polygon fill="#7bc142" stroke="#7bc142" stroke-width="1.6" points="976.73,-331.88 985.53,-325.97 974.97,-325.11 976.73,-331.88"/>
+</g>
+<!-- CMP1 -->
+<g id="node14" class="node">
+<title>CMP1</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M1115.5,-479C1115.5,-479 987.5,-479 987.5,-479 981.5,-479 975.5,-473 975.5,-467 975.5,-467 975.5,-455 975.5,-455 975.5,-449 981.5,-443 987.5,-443 987.5,-443 1115.5,-443 1115.5,-443 1121.5,-443 1127.5,-449 1127.5,-455 1127.5,-455 1127.5,-467 1127.5,-467 1127.5,-473 1121.5,-479 1115.5,-479"/>
+<text text-anchor="middle" x="1051.5" y="-458.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x02C COMPARE (RW)</text>
+</g>
+<!-- CNT1&#45;&gt;CMP1 -->
+<g id="edge13" class="edge">
+<title>CNT1&#45;&gt;CMP1</title>
+<path fill="none" stroke="#7bc142" stroke-width="1.6" stroke-dasharray="5,2" d="M828.46,-403.01C871.43,-414.23 926.85,-428.71 971.57,-440.39"/>
+<polygon fill="#7bc142" stroke="#7bc142" stroke-width="1.6" points="970.97,-443.85 981.53,-442.99 972.74,-437.07 970.97,-443.85"/>
+</g>
+<!-- IRQ1 -->
+<g id="node15" class="node">
+<title>IRQ1</title>
+<path fill="#3d1a5c" stroke="#cc88ff" d="M1116,-403C1116,-403 987,-403 987,-403 981,-403 975,-397 975,-391 975,-391 975,-379 975,-379 975,-373 981,-367 987,-367 987,-367 1116,-367 1116,-367 1122,-367 1128,-373 1128,-379 1128,-379 1128,-391 1128,-391 1128,-397 1122,-403 1116,-403"/>
+<text text-anchor="middle" x="1051.5" y="-382.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x030 IRQSTAT (W1C)</text>
+</g>
+<!-- CNT1&#45;&gt;IRQ1 -->
+<g id="edge12" class="edge">
+<title>CNT1&#45;&gt;IRQ1</title>
+<path fill="none" stroke="#cc88ff" stroke-width="1.6" d="M831.06,-385C871.49,-385 922.29,-385 964.83,-385"/>
+<polygon fill="#cc88ff" stroke="#cc88ff" stroke-width="1.6" points="964.89,-388.5 974.89,-385 964.89,-381.5 964.89,-388.5"/>
+</g>
+<!-- PWM1 -->
+<g id="node16" class="node">
+<title>PWM1</title>
+<ellipse fill="#2d5016" stroke="#7bc142" cx="1396.52" cy="-461" rx="73.58" ry="18.27"/>
+<text text-anchor="middle" x="1396.52" y="-458.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">CH1 PWM out</text>
+</g>
+<!-- CMP1&#45;&gt;PWM1 -->
+<g id="edge14" class="edge">
+<title>CMP1&#45;&gt;PWM1</title>
+<path fill="none" stroke="#7bc142" stroke-width="1.6" d="M1127.78,-461C1182.36,-461 1256.17,-461 1312.47,-461"/>
+<polygon fill="#7bc142" stroke="#7bc142" stroke-width="1.6" points="1312.77,-464.5 1322.77,-461 1312.77,-457.5 1312.77,-464.5"/>
+</g>
+<!-- IRQ1&#45;&gt;TIRQ -->
+<g id="edge16" class="edge">
+<title>IRQ1&#45;&gt;TIRQ</title>
+<path fill="none" stroke="#cc88ff" stroke-width="1.6" d="M1122.26,-366.99C1138.98,-361.55 1156.47,-354.88 1172,-347 1217.66,-323.83 1217.82,-298.9 1265,-279 1271.7,-276.18 1278.73,-273.71 1285.91,-271.57"/>
+<polygon fill="#cc88ff" stroke="#cc88ff" stroke-width="1.6" points="1287.09,-274.87 1295.79,-268.83 1285.22,-268.13 1287.09,-274.87"/>
+</g>
+</g>
+</svg>
+<div class="rtw"><div class="rtl">Register Map</div><table><tr><th>Offset</th><th>Name</th><th>Access</th><th>Description</th></tr><tr><td>0x000/0x020</td><td>LOAD</td><td><span class="rw">RW</span></td><td>32-bit reload value CH0/CH1</td></tr><tr><td>0x004/0x024</td><td>VALUE</td><td><span class="ro">RO</span></td><td>Current counter value</td></tr><tr><td>0x008/0x028</td><td>CTRL</td><td><span class="rw">RW</span></td><td>[0]=en [1]=periodic [2]=irq_en [3]=pwm_en [11:4]=prescale</td></tr><tr><td>0x00C/0x02C</td><td>COMPARE</td><td><span class="rw">RW</span></td><td>PWM compare threshold</td></tr><tr><td>0x010/0x030</td><td>IRQSTAT</td><td><span class="w1c">W1C</span></td><td>Terminal count flag</td></tr></table></div></div>
+  </div>
+  <hr class="sep"/>
+  
+  <div class="sec" id="apb-watchdog">
+    <div class="sh"><span class="sn">08</span><h2>APB Watchdog FSM — apb_watchdog</h2><span class="st tp">0x0000_3000 ⚠ PRIVILEGED</span></div>
+    <div class="co"><strong>Privileged access only.</strong> Write <code>0xABCD_1234</code> to UNLOCK before configuring. Kick the watchdog with <code>0xFEED_C0DE</code> to REFRESH. Two-stage timeout: Stage-1 fires IRQ, Stage-2 asserts system reset. Window mode: early kick = violation.</div><div class="dc"><svg style="max-width:100%;height:auto;background:#ffffff;border-radius:6px;" width="1118pt" height="827pt"
+ viewBox="0.00 0.00 1118.34 827.14" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(36 791.14)">
+<title>G</title>
+<polygon fill="#ffffff" stroke="none" points="-36,36 -36,-791.14 1082.34,-791.14 1082.34,36 -36,36"/>
+<!-- INIT -->
+<g id="node1" class="node">
+<title>INIT</title>
+<ellipse fill="#4a9eff" stroke="#4a9eff" cx="474.34" cy="-742.64" rx="12.5" ry="12.5"/>
+</g>
+<!-- LCK -->
+<g id="node2" class="node">
+<title>LCK</title>
+<path fill="#1a3a5c" stroke="#4a9eff" d="M562.84,-648.14C562.84,-648.14 385.84,-648.14 385.84,-648.14 379.84,-648.14 373.84,-642.14 373.84,-636.14 373.84,-636.14 373.84,-610.14 373.84,-610.14 373.84,-604.14 379.84,-598.14 385.84,-598.14 385.84,-598.14 562.84,-598.14 562.84,-598.14 568.84,-598.14 574.84,-604.14 574.84,-610.14 574.84,-610.14 574.84,-636.14 574.84,-636.14 574.84,-642.14 568.84,-648.14 562.84,-648.14"/>
+<text text-anchor="middle" x="474.34" y="-632.34" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">LOCKED</text>
+<text text-anchor="middle" x="474.34" y="-620.34" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">All control regs write&#45;protected</text>
+<text text-anchor="middle" x="474.34" y="-608.34" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">Counter running (if enabled)</text>
+</g>
+<!-- INIT&#45;&gt;LCK -->
+<g id="edge1" class="edge">
+<title>INIT&#45;&gt;LCK</title>
+<path fill="none" stroke="#8888ff" stroke-width="1.6" d="M474.34,-729.95C474.34,-713.46 474.34,-682.72 474.34,-658.6"/>
+<polygon fill="#8888ff" stroke="#8888ff" stroke-width="1.6" points="477.84,-658.4 474.34,-648.4 470.84,-658.4 477.84,-658.4"/>
+<text text-anchor="middle" x="495.34" y="-686.94" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">sys_rst_n</text>
+</g>
+<!-- ULK -->
+<g id="node3" class="node">
+<title>ULK</title>
+<path fill="#2d5016" stroke="#7bc142" d="M276.34,-516.14C276.34,-516.14 156.34,-516.14 156.34,-516.14 150.34,-516.14 144.34,-510.14 144.34,-504.14 144.34,-504.14 144.34,-478.14 144.34,-478.14 144.34,-472.14 150.34,-466.14 156.34,-466.14 156.34,-466.14 276.34,-466.14 276.34,-466.14 282.34,-466.14 288.34,-472.14 288.34,-478.14 288.34,-478.14 288.34,-504.14 288.34,-504.14 288.34,-510.14 282.34,-516.14 276.34,-516.14"/>
+<text text-anchor="middle" x="216.34" y="-500.34" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">UNLOCKED</text>
+<text text-anchor="middle" x="216.34" y="-488.34" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">~15 cycle window</text>
+<text text-anchor="middle" x="216.34" y="-476.34" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">Control regs writable</text>
+</g>
+<!-- LCK&#45;&gt;ULK -->
+<g id="edge2" class="edge">
+<title>LCK&#45;&gt;ULK</title>
+<path fill="none" stroke="#7bc142" stroke-width="1.6" d="M373.64,-616.09C244.4,-607.28 33.94,-588.99 10.34,-562.14 -29.49,-516.83 60.59,-500.81 133.97,-495.17"/>
+<polygon fill="#7bc142" stroke="#7bc142" stroke-width="1.6" points="134.47,-498.64 144.19,-494.44 133.97,-491.66 134.47,-498.64"/>
+<text text-anchor="middle" x="82.34" y="-554.94" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">Write 0xABCD_1234 to UNLOCK</text>
+</g>
+<!-- ST1 -->
+<g id="node4" class="node">
+<title>ST1</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M797.34,-516.14C797.34,-516.14 605.34,-516.14 605.34,-516.14 599.34,-516.14 593.34,-510.14 593.34,-504.14 593.34,-504.14 593.34,-478.14 593.34,-478.14 593.34,-472.14 599.34,-466.14 605.34,-466.14 605.34,-466.14 797.34,-466.14 797.34,-466.14 803.34,-466.14 809.34,-472.14 809.34,-478.14 809.34,-478.14 809.34,-504.14 809.34,-504.14 809.34,-510.14 803.34,-516.14 797.34,-516.14"/>
+<text text-anchor="middle" x="701.34" y="-500.34" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">STAGE 1 TIMEOUT</text>
+<text text-anchor="middle" x="701.34" y="-488.34" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">IRQ asserted &#160;Reload from LOAD2</text>
+<text text-anchor="middle" x="701.34" y="-476.34" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">irq_stat[0] set</text>
+</g>
+<!-- LCK&#45;&gt;ST1 -->
+<g id="edge5" class="edge">
+<title>LCK&#45;&gt;ST1</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" d="M499.3,-597.94C515.26,-583.36 536.93,-565.16 558.34,-552.14 578.38,-539.97 601.34,-529.13 622.91,-520.13"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="624.45,-523.28 632.39,-516.26 621.8,-516.8 624.45,-523.28"/>
+<text text-anchor="middle" x="616.84" y="-554.94" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">LOAD1 counter reaches 0</text>
+</g>
+<!-- VIO -->
+<g id="node6" class="node">
+<title>VIO</title>
+<path fill="#5c1a1a" stroke="#ff4444" d="M998.84,-510.14C998.84,-510.14 881.84,-510.14 881.84,-510.14 875.84,-510.14 869.84,-504.14 869.84,-498.14 869.84,-498.14 869.84,-484.14 869.84,-484.14 869.84,-478.14 875.84,-472.14 881.84,-472.14 881.84,-472.14 998.84,-472.14 998.84,-472.14 1004.84,-472.14 1010.84,-478.14 1010.84,-484.14 1010.84,-484.14 1010.84,-498.14 1010.84,-498.14 1010.84,-504.14 1004.84,-510.14 998.84,-510.14"/>
+<text text-anchor="middle" x="940.34" y="-494.34" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">WINDOW VIOLATION</text>
+<text text-anchor="middle" x="940.34" y="-482.34" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">irq_stat[1] set</text>
+</g>
+<!-- LCK&#45;&gt;VIO -->
+<g id="edge9" class="edge">
+<title>LCK&#45;&gt;VIO</title>
+<path fill="none" stroke="#ff4444" stroke-width="1.6" d="M575.12,-619.64C653.09,-614.55 762.27,-600.39 850.34,-562.14 874.68,-551.57 898.21,-532.88 915.1,-517.47"/>
+<polygon fill="#ff4444" stroke="#ff4444" stroke-width="1.6" points="917.94,-519.61 922.84,-510.21 913.15,-514.5 917.94,-519.61"/>
+<text text-anchor="middle" x="956.84" y="-554.94" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">Write REFRESH early (window violation)</text>
+</g>
+<!-- ULK&#45;&gt;LCK -->
+<g id="edge3" class="edge">
+<title>ULK&#45;&gt;LCK</title>
+<path fill="none" stroke="#444444" stroke-width="1.6" stroke-dasharray="5,2" d="M206.02,-516.31C201.49,-531.05 199.2,-549.45 209.34,-562.14 228.97,-586.72 300.07,-601.97 363.68,-610.95"/>
+<polygon fill="#444444" stroke="#444444" stroke-width="1.6" points="363.44,-614.45 373.82,-612.34 364.39,-607.51 363.44,-614.45"/>
+<text text-anchor="middle" x="265.84" y="-554.94" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">Window expires ~15 cyc</text>
+</g>
+<!-- ULK&#45;&gt;LCK -->
+<g id="edge4" class="edge">
+<title>ULK&#45;&gt;LCK</title>
+<path fill="none" stroke="#444444" stroke-width="1.6" stroke-dasharray="5,2" d="M264.01,-516.16C307.37,-538.01 371.44,-570.3 417.46,-593.49"/>
+<polygon fill="#444444" stroke="#444444" stroke-width="1.6" points="415.91,-596.62 426.42,-598 419.06,-590.37 415.91,-596.62"/>
+<text text-anchor="middle" x="416.34" y="-554.94" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">Config written (auto&#45;relock)</text>
+</g>
+<!-- ST1&#45;&gt;LCK -->
+<g id="edge7" class="edge">
+<title>ST1&#45;&gt;LCK</title>
+<path fill="none" stroke="#7bc142" stroke-width="1.6" d="M700.96,-516.47C699.45,-531.48 695.06,-550.09 683.34,-562.14 657.42,-588.8 620.51,-603.82 584.9,-612.22"/>
+<polygon fill="#7bc142" stroke="#7bc142" stroke-width="1.6" points="583.92,-608.86 574.9,-614.42 585.42,-615.69 583.92,-608.86"/>
+<text text-anchor="middle" x="764.34" y="-554.94" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">Write 0xFEED_C0DE to REFRESH</text>
+</g>
+<!-- ST2 -->
+<g id="node5" class="node">
+<title>ST2</title>
+<path fill="#5c1a1a" stroke="#ff4444" d="M888.34,-384.14C888.34,-384.14 752.34,-384.14 752.34,-384.14 746.34,-384.14 740.34,-378.14 740.34,-372.14 740.34,-372.14 740.34,-346.14 740.34,-346.14 740.34,-340.14 746.34,-334.14 752.34,-334.14 752.34,-334.14 888.34,-334.14 888.34,-334.14 894.34,-334.14 900.34,-340.14 900.34,-346.14 900.34,-346.14 900.34,-372.14 900.34,-372.14 900.34,-378.14 894.34,-384.14 888.34,-384.14"/>
+<text text-anchor="middle" x="820.34" y="-368.34" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">STAGE 2 TIMEOUT</text>
+<text text-anchor="middle" x="820.34" y="-356.34" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">wdt_rst_req=1</text>
+<text text-anchor="middle" x="820.34" y="-344.34" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">System reset imminent</text>
+</g>
+<!-- ST1&#45;&gt;ST2 -->
+<g id="edge6" class="edge">
+<title>ST1&#45;&gt;ST2</title>
+<path fill="none" stroke="#ff4444" stroke-width="1.6" d="M691.85,-466.05C687.83,-451.69 685.8,-433.67 694.34,-420.14 703.23,-406.06 716.43,-395.22 730.99,-386.89"/>
+<polygon fill="#ff4444" stroke="#ff4444" stroke-width="1.6" points="732.99,-389.78 740.2,-382.02 729.72,-383.6 732.99,-389.78"/>
+<text text-anchor="middle" x="786.34" y="-422.94" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">LOAD2 counter reaches 0 (no REFRESH)</text>
+</g>
+<!-- TERM -->
+<g id="node7" class="node">
+<title>TERM</title>
+<ellipse fill="#5c1a1a" stroke="#ff4444" cx="820.34" cy="-130.57" rx="126.64" ry="126.64"/>
+<ellipse fill="none" stroke="#ff4444" cx="820.34" cy="-130.57" rx="130.64" ry="130.64"/>
+<text text-anchor="middle" x="820.34" y="-139.77" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">System Reset</text>
+<text text-anchor="middle" x="820.34" y="-127.77" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">wdt_rst_req=1</text>
+<text text-anchor="middle" x="820.34" y="-115.77" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">&#45;&gt; reset_sync &#45;&gt; sys_rst_n</text>
+</g>
+<!-- ST2&#45;&gt;TERM -->
+<g id="edge8" class="edge">
+<title>ST2&#45;&gt;TERM</title>
+<path fill="none" stroke="#ff4444" stroke-width="1.6" d="M820.34,-333.9C820.34,-317.89 820.34,-295.49 820.34,-271.38"/>
+<polygon fill="#ff4444" stroke="#ff4444" stroke-width="1.6" points="823.84,-271.33 820.34,-261.33 816.84,-271.33 823.84,-271.33"/>
+</g>
+<!-- VIO&#45;&gt;ST2 -->
+<g id="edge10" class="edge">
+<title>VIO&#45;&gt;ST2</title>
+<path fill="none" stroke="#ff4444" stroke-width="1.6" d="M927.63,-471.9C917.17,-457.35 901.64,-436.73 886.34,-420.14 877.14,-410.17 866.5,-399.99 856.49,-390.91"/>
+<polygon fill="#ff4444" stroke="#ff4444" stroke-width="1.6" points="858.78,-388.27 848.99,-384.21 854.11,-393.49 858.78,-388.27"/>
+<text text-anchor="middle" x="917.84" y="-422.94" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">next cycle</text>
+</g>
+</g>
+</svg>
+<div class="rtw"><div class="rtl">Register Map</div><table><tr><th>Offset</th><th>Name</th><th>Access</th><th>Description</th></tr><tr><td>0x000</td><td>LOAD1</td><td><span class="rws">RW*</span></td><td>Stage-1 timeout (requires unlock)</td></tr><tr><td>0x004</td><td>LOAD2</td><td><span class="rws">RW*</span></td><td>Stage-2 timeout (requires unlock)</td></tr><tr><td>0x008</td><td>VALUE</td><td><span class="ro">RO</span></td><td>Current counter</td></tr><tr><td>0x00C</td><td>CTRL</td><td><span class="rws">RW*</span></td><td>[0]=en [1]=window_en [2]=rst_en [3]=irq_en</td></tr><tr><td>0x010</td><td>STATUS</td><td><span class="ro">RO</span></td><td>[0]=irq_pending [1]=in_window [2]=unlocked</td></tr><tr><td>0x014</td><td>UNLOCK</td><td><span class="wo">WO</span></td><td>Write 0xABCD_1234 (~15 cycle window)</td></tr><tr><td>0x018</td><td>REFRESH</td><td><span class="wo">WO</span></td><td>Write 0xFEED_C0DE to kick</td></tr><tr><td>0x01C</td><td>IRQSTAT</td><td><span class="w1c">W1C</span></td><td>[0]=stage1_fired [1]=window_violation</td></tr></table></div></div>
+  </div>
+  <hr class="sep"/>
+  
+  <div class="sec" id="irq-agg">
+    <div class="sh"><span class="sn">09</span><h2>IRQ Aggregator — irq_aggregator</h2><span class="st tc">0x0000_4000</span></div>
+    <div class="co">Collects 8 interrupt sources with configurable edge/level and polarity. <strong>Priority encoder</strong> selects the highest pending source (src7=highest). Outputs <code>cpu_irq</code> and <code>cpu_irq_id[2:0]</code> vector to the CPU.</div><div class="dc"><svg style="max-width:100%;height:auto;background:#ffffff;border-radius:6px;" width="1691pt" height="749pt"
+ viewBox="0.00 0.00 1691.00 748.54" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(36 712.54)">
+<title>G</title>
+<polygon fill="#ffffff" stroke="none" points="-36,36 -36,-712.54 1655,-712.54 1655,36 -36,36"/>
+<g id="clust1" class="cluster">
+<title>cluster_src</title>
+<polygon fill="#f0f4f8" stroke="#2a3448" points="8,-597.54 8,-668.54 1184,-668.54 1184,-597.54 8,-597.54"/>
+<text text-anchor="middle" x="596" y="-656.54" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">Interrupt Sources</text>
+</g>
+<!-- S0r -->
+<g id="node1" class="node">
+<title>S0r</title>
+<path fill="#1e2535" stroke="#2a3448" d="M1163.5,-641.54C1163.5,-641.54 1074.5,-641.54 1074.5,-641.54 1068.5,-641.54 1062.5,-635.54 1062.5,-629.54 1062.5,-629.54 1062.5,-617.54 1062.5,-617.54 1062.5,-611.54 1068.5,-605.54 1074.5,-605.54 1074.5,-605.54 1163.5,-605.54 1163.5,-605.54 1169.5,-605.54 1175.5,-611.54 1175.5,-617.54 1175.5,-617.54 1175.5,-629.54 1175.5,-629.54 1175.5,-635.54 1169.5,-641.54 1163.5,-641.54"/>
+<text text-anchor="middle" x="1119" y="-620.74" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#444444">src[0] reserved</text>
+</g>
+<!-- POL -->
+<g id="node9" class="node">
+<title>POL</title>
+<path fill="#1a3a5c" stroke="#4a9eff" d="M848.5,-555.54C848.5,-555.54 637.5,-555.54 637.5,-555.54 631.5,-555.54 625.5,-549.54 625.5,-543.54 625.5,-543.54 625.5,-531.54 625.5,-531.54 625.5,-525.54 631.5,-519.54 637.5,-519.54 637.5,-519.54 848.5,-519.54 848.5,-519.54 854.5,-519.54 860.5,-525.54 860.5,-531.54 860.5,-531.54 860.5,-543.54 860.5,-543.54 860.5,-549.54 854.5,-555.54 848.5,-555.54"/>
+<text text-anchor="middle" x="743" y="-534.74" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">Polarity Correction XOR with IRQ_POL</text>
+</g>
+<!-- S0r&#45;&gt;POL -->
+<g id="edge1" class="edge">
+<title>S0r&#45;&gt;POL</title>
+<path fill="none" stroke="#444444" stroke-width="1.6" d="M1069.55,-605.52C1060.44,-602.67 1050.98,-599.87 1042,-597.54 980.77,-581.62 911.51,-567.7 855.08,-557.38"/>
+<polygon fill="#444444" stroke="#444444" stroke-width="1.6" points="855.52,-553.91 845.05,-555.57 854.27,-560.79 855.52,-553.91"/>
+</g>
+<!-- S1r -->
+<g id="node2" class="node">
+<title>S1r</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M1010,-641.54C1010,-641.54 926,-641.54 926,-641.54 920,-641.54 914,-635.54 914,-629.54 914,-629.54 914,-617.54 914,-617.54 914,-611.54 920,-605.54 926,-605.54 926,-605.54 1010,-605.54 1010,-605.54 1016,-605.54 1022,-611.54 1022,-617.54 1022,-617.54 1022,-629.54 1022,-629.54 1022,-635.54 1016,-641.54 1010,-641.54"/>
+<text text-anchor="middle" x="968" y="-620.74" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">src[1] uart_irq</text>
+</g>
+<!-- S1r&#45;&gt;POL -->
+<g id="edge2" class="edge">
+<title>S1r&#45;&gt;POL</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" d="M922.2,-605.44C886.31,-592.04 836.24,-573.35 798.15,-559.13"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="799.33,-555.83 788.74,-555.62 796.88,-562.39 799.33,-555.83"/>
+</g>
+<!-- S2r -->
+<g id="node3" class="node">
+<title>S2r</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M861.5,-641.54C861.5,-641.54 776.5,-641.54 776.5,-641.54 770.5,-641.54 764.5,-635.54 764.5,-629.54 764.5,-629.54 764.5,-617.54 764.5,-617.54 764.5,-611.54 770.5,-605.54 776.5,-605.54 776.5,-605.54 861.5,-605.54 861.5,-605.54 867.5,-605.54 873.5,-611.54 873.5,-617.54 873.5,-617.54 873.5,-629.54 873.5,-629.54 873.5,-635.54 867.5,-641.54 861.5,-641.54"/>
+<text text-anchor="middle" x="819" y="-620.74" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">src[2] gpio_irq</text>
+</g>
+<!-- S2r&#45;&gt;POL -->
+<g id="edge3" class="edge">
+<title>S2r&#45;&gt;POL</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" d="M803.25,-605.13C792.28,-593 777.48,-576.64 765.29,-563.18"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="767.77,-560.7 758.47,-555.63 762.58,-565.4 767.77,-560.7"/>
+</g>
+<!-- S3r -->
+<g id="node4" class="node">
+<title>S3r</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M712,-641.54C712,-641.54 622,-641.54 622,-641.54 616,-641.54 610,-635.54 610,-629.54 610,-629.54 610,-617.54 610,-617.54 610,-611.54 616,-605.54 622,-605.54 622,-605.54 712,-605.54 712,-605.54 718,-605.54 724,-611.54 724,-617.54 724,-617.54 724,-629.54 724,-629.54 724,-635.54 718,-641.54 712,-641.54"/>
+<text text-anchor="middle" x="667" y="-620.74" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">src[3] timer_irq</text>
+</g>
+<!-- S3r&#45;&gt;POL -->
+<g id="edge4" class="edge">
+<title>S3r&#45;&gt;POL</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" d="M682.75,-605.13C693.72,-593 708.52,-576.64 720.71,-563.18"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="723.42,-565.4 727.53,-555.63 718.23,-560.7 723.42,-565.4"/>
+</g>
+<!-- S4r -->
+<g id="node5" class="node">
+<title>S4r</title>
+<path fill="#5c1a1a" stroke="#ff4444" d="M557.5,-641.54C557.5,-641.54 476.5,-641.54 476.5,-641.54 470.5,-641.54 464.5,-635.54 464.5,-629.54 464.5,-629.54 464.5,-617.54 464.5,-617.54 464.5,-611.54 470.5,-605.54 476.5,-605.54 476.5,-605.54 557.5,-605.54 557.5,-605.54 563.5,-605.54 569.5,-611.54 569.5,-617.54 569.5,-617.54 569.5,-629.54 569.5,-629.54 569.5,-635.54 563.5,-641.54 557.5,-641.54"/>
+<text text-anchor="middle" x="517" y="-620.74" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">src[4] wdt_irq</text>
+</g>
+<!-- S4r&#45;&gt;POL -->
+<g id="edge5" class="edge">
+<title>S4r&#45;&gt;POL</title>
+<path fill="none" stroke="#ff4444" stroke-width="1.6" d="M563.01,-605.44C599.06,-592.04 649.34,-573.35 687.61,-559.13"/>
+<polygon fill="#ff4444" stroke="#ff4444" stroke-width="1.6" points="688.9,-562.38 697.06,-555.62 686.46,-555.82 688.9,-562.38"/>
+</g>
+<!-- S5r -->
+<g id="node6" class="node">
+<title>S5r</title>
+<path fill="#5c1a1a" stroke="#ff4444" d="M412.5,-641.54C412.5,-641.54 331.5,-641.54 331.5,-641.54 325.5,-641.54 319.5,-635.54 319.5,-629.54 319.5,-629.54 319.5,-617.54 319.5,-617.54 319.5,-611.54 325.5,-605.54 331.5,-605.54 331.5,-605.54 412.5,-605.54 412.5,-605.54 418.5,-605.54 424.5,-611.54 424.5,-617.54 424.5,-617.54 424.5,-629.54 424.5,-629.54 424.5,-635.54 418.5,-641.54 412.5,-641.54"/>
+<text text-anchor="middle" x="372" y="-620.74" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">src[5] wdt_rst</text>
+</g>
+<!-- S5r&#45;&gt;POL -->
+<g id="edge6" class="edge">
+<title>S5r&#45;&gt;POL</title>
+<path fill="none" stroke="#ff4444" stroke-width="1.6" d="M418.84,-605.46C427.47,-602.61 436.46,-599.84 445,-597.54 505.18,-581.36 573.29,-567.54 629.19,-557.36"/>
+<polygon fill="#ff4444" stroke="#ff4444" stroke-width="1.6" points="629.9,-560.79 639.12,-555.56 628.66,-553.9 629.9,-560.79"/>
+</g>
+<!-- S6r -->
+<g id="node7" class="node">
+<title>S6r</title>
+<path fill="#1e2535" stroke="#2a3448" d="M267.5,-641.54C267.5,-641.54 178.5,-641.54 178.5,-641.54 172.5,-641.54 166.5,-635.54 166.5,-629.54 166.5,-629.54 166.5,-617.54 166.5,-617.54 166.5,-611.54 172.5,-605.54 178.5,-605.54 178.5,-605.54 267.5,-605.54 267.5,-605.54 273.5,-605.54 279.5,-611.54 279.5,-617.54 279.5,-617.54 279.5,-629.54 279.5,-629.54 279.5,-635.54 273.5,-641.54 267.5,-641.54"/>
+<text text-anchor="middle" x="223" y="-620.74" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#444444">src[6] reserved</text>
+</g>
+<!-- S6r&#45;&gt;POL -->
+<g id="edge7" class="edge">
+<title>S6r&#45;&gt;POL</title>
+<path fill="none" stroke="#444444" stroke-width="1.6" d="M271.09,-605.44C280.59,-602.49 290.54,-599.69 300,-597.54 404.91,-573.73 526.14,-558.4 615.23,-549.36"/>
+<polygon fill="#444444" stroke="#444444" stroke-width="1.6" points="615.78,-552.82 625.38,-548.34 615.08,-545.85 615.78,-552.82"/>
+</g>
+<!-- S7r -->
+<g id="node8" class="node">
+<title>S7r</title>
+<path fill="#3d1a5c" stroke="#cc88ff" d="M114.5,-641.54C114.5,-641.54 27.5,-641.54 27.5,-641.54 21.5,-641.54 15.5,-635.54 15.5,-629.54 15.5,-629.54 15.5,-617.54 15.5,-617.54 15.5,-611.54 21.5,-605.54 27.5,-605.54 27.5,-605.54 114.5,-605.54 114.5,-605.54 120.5,-605.54 126.5,-611.54 126.5,-617.54 126.5,-617.54 126.5,-629.54 126.5,-629.54 126.5,-635.54 120.5,-641.54 114.5,-641.54"/>
+<text text-anchor="middle" x="71" y="-620.74" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">src[7] software</text>
+</g>
+<!-- S7r&#45;&gt;POL -->
+<g id="edge8" class="edge">
+<title>S7r&#45;&gt;POL</title>
+<path fill="none" stroke="#cc88ff" stroke-width="1.6" d="M117.59,-605.44C127.21,-602.41 137.35,-599.58 147,-597.54 306.31,-563.88 493.73,-549.32 615.26,-543.09"/>
+<polygon fill="#cc88ff" stroke="#cc88ff" stroke-width="1.6" points="615.54,-546.58 625.35,-542.59 615.19,-539.59 615.54,-546.58"/>
+</g>
+<!-- RAW -->
+<g id="node10" class="node">
+<title>RAW</title>
+<path fill="#2d5016" stroke="#7bc142" d="M838.5,-469.54C838.5,-469.54 645.5,-469.54 645.5,-469.54 639.5,-469.54 633.5,-463.54 633.5,-457.54 633.5,-457.54 633.5,-445.54 633.5,-445.54 633.5,-439.54 639.5,-433.54 645.5,-433.54 645.5,-433.54 838.5,-433.54 838.5,-433.54 844.5,-433.54 850.5,-439.54 850.5,-445.54 850.5,-445.54 850.5,-457.54 850.5,-457.54 850.5,-463.54 844.5,-469.54 838.5,-469.54"/>
+<text text-anchor="middle" x="742" y="-448.74" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x000 IRQ_RAW (RO) &#160;Raw inputs</text>
+</g>
+<!-- POL&#45;&gt;RAW -->
+<g id="edge11" class="edge">
+<title>POL&#45;&gt;RAW</title>
+<path fill="none" stroke="#7bc142" stroke-width="1.6" d="M742.79,-519.13C742.66,-507.8 742.48,-492.77 742.33,-479.85"/>
+<polygon fill="#7bc142" stroke="#7bc142" stroke-width="1.6" points="745.82,-479.59 742.2,-469.63 738.82,-479.68 745.82,-479.59"/>
+</g>
+<!-- ELD -->
+<g id="node11" class="node">
+<title>ELD</title>
+<path fill="#1a3a5c" stroke="#4a9eff" d="M1055.5,-469.54C1055.5,-469.54 902.5,-469.54 902.5,-469.54 896.5,-469.54 890.5,-463.54 890.5,-457.54 890.5,-457.54 890.5,-445.54 890.5,-445.54 890.5,-439.54 896.5,-433.54 902.5,-433.54 902.5,-433.54 1055.5,-433.54 1055.5,-433.54 1061.5,-433.54 1067.5,-439.54 1067.5,-445.54 1067.5,-445.54 1067.5,-457.54 1067.5,-457.54 1067.5,-463.54 1061.5,-469.54 1055.5,-469.54"/>
+<text text-anchor="middle" x="979" y="-448.74" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">Edge/Level Detect + Latch</text>
+</g>
+<!-- POL&#45;&gt;ELD -->
+<g id="edge12" class="edge">
+<title>POL&#45;&gt;ELD</title>
+<path fill="none" stroke="#4a9eff" stroke-width="1.6" d="M791.04,-519.44C828.77,-506.01 881.42,-487.27 921.41,-473.04"/>
+<polygon fill="#4a9eff" stroke="#4a9eff" stroke-width="1.6" points="922.78,-476.27 931.02,-469.62 920.43,-469.67 922.78,-476.27"/>
+</g>
+<!-- MSK -->
+<g id="node12" class="node">
+<title>MSK</title>
+<path fill="#2d5016" stroke="#7bc142" d="M1129,-383.54C1129,-383.54 1027,-383.54 1027,-383.54 1021,-383.54 1015,-377.54 1015,-371.54 1015,-371.54 1015,-359.54 1015,-359.54 1015,-353.54 1021,-347.54 1027,-347.54 1027,-347.54 1129,-347.54 1129,-347.54 1135,-347.54 1141,-353.54 1141,-359.54 1141,-359.54 1141,-371.54 1141,-371.54 1141,-377.54 1135,-383.54 1129,-383.54"/>
+<text text-anchor="middle" x="1078" y="-362.74" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">Enable Mask AND</text>
+</g>
+<!-- ELD&#45;&gt;MSK -->
+<g id="edge15" class="edge">
+<title>ELD&#45;&gt;MSK</title>
+<path fill="none" stroke="#4a9eff" stroke-width="1.6" d="M999.51,-433.13C1014.08,-420.78 1033.81,-404.03 1049.85,-390.42"/>
+<polygon fill="#4a9eff" stroke="#4a9eff" stroke-width="1.6" points="1052.49,-392.77 1057.85,-383.63 1047.96,-387.44 1052.49,-392.77"/>
+</g>
+<!-- PND -->
+<g id="node13" class="node">
+<title>PND</title>
+<path fill="#2d5016" stroke="#7bc142" d="M1181.5,-297.54C1181.5,-297.54 974.5,-297.54 974.5,-297.54 968.5,-297.54 962.5,-291.54 962.5,-285.54 962.5,-285.54 962.5,-273.54 962.5,-273.54 962.5,-267.54 968.5,-261.54 974.5,-261.54 974.5,-261.54 1181.5,-261.54 1181.5,-261.54 1187.5,-261.54 1193.5,-267.54 1193.5,-273.54 1193.5,-273.54 1193.5,-285.54 1193.5,-285.54 1193.5,-291.54 1187.5,-297.54 1181.5,-297.54"/>
+<text text-anchor="middle" x="1078" y="-276.74" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x004 IRQ_PEND (RO) &#160;Pending bits</text>
+</g>
+<!-- MSK&#45;&gt;PND -->
+<g id="edge17" class="edge">
+<title>MSK&#45;&gt;PND</title>
+<path fill="none" stroke="#7bc142" stroke-width="1.6" d="M1078,-347.13C1078,-335.8 1078,-320.77 1078,-307.85"/>
+<polygon fill="#7bc142" stroke="#7bc142" stroke-width="1.6" points="1081.5,-307.63 1078,-297.63 1074.5,-307.63 1081.5,-307.63"/>
+</g>
+<!-- PRI -->
+<g id="node14" class="node">
+<title>PRI</title>
+<path fill="#3d1a5c" stroke="#cc88ff" d="M1156,-211.54C1156,-211.54 1000,-211.54 1000,-211.54 994,-211.54 988,-205.54 988,-199.54 988,-199.54 988,-185.54 988,-185.54 988,-179.54 994,-173.54 1000,-173.54 1000,-173.54 1156,-173.54 1156,-173.54 1162,-173.54 1168,-179.54 1168,-185.54 1168,-185.54 1168,-199.54 1168,-199.54 1168,-205.54 1162,-211.54 1156,-211.54"/>
+<text text-anchor="middle" x="1078" y="-195.74" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">Priority Encoder</text>
+<text text-anchor="middle" x="1078" y="-183.74" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">src7=highest &#160;src0=lowest</text>
+</g>
+<!-- PND&#45;&gt;PRI -->
+<g id="edge18" class="edge">
+<title>PND&#45;&gt;PRI</title>
+<path fill="none" stroke="#cc88ff" stroke-width="1.6" d="M1078,-261.34C1078,-250.04 1078,-235 1078,-221.96"/>
+<polygon fill="#cc88ff" stroke="#cc88ff" stroke-width="1.6" points="1081.5,-221.59 1078,-211.59 1074.5,-221.59 1081.5,-221.59"/>
+</g>
+<!-- VEC -->
+<g id="node20" class="node">
+<title>VEC</title>
+<path fill="#3d1a5c" stroke="#cc88ff" d="M1051,-123.15C1051,-123.15 841,-123.15 841,-123.15 835,-123.15 829,-117.15 829,-111.15 829,-111.15 829,-99.15 829,-99.15 829,-93.15 835,-87.15 841,-87.15 841,-87.15 1051,-87.15 1051,-87.15 1057,-87.15 1063,-93.15 1063,-99.15 1063,-99.15 1063,-111.15 1063,-111.15 1063,-117.15 1057,-123.15 1051,-123.15"/>
+<text text-anchor="middle" x="946" y="-102.35" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x018 IRQ_VEC (RO) &#160;[2:0] vector ID</text>
+</g>
+<!-- PRI&#45;&gt;VEC -->
+<g id="edge19" class="edge">
+<title>PRI&#45;&gt;VEC</title>
+<path fill="none" stroke="#cc88ff" stroke-width="1.6" d="M1050.01,-173.43C1029.92,-160.44 1002.71,-142.84 981.16,-128.89"/>
+<polygon fill="#cc88ff" stroke="#cc88ff" stroke-width="1.6" points="982.9,-125.86 972.6,-123.36 979.1,-131.73 982.9,-125.86"/>
+</g>
+<!-- CIRQ -->
+<g id="node21" class="node">
+<title>CIRQ</title>
+<ellipse fill="#1a3a5c" stroke="#4a9eff" cx="1211" cy="-105.15" rx="108.38" ry="18.27"/>
+<text text-anchor="middle" x="1211" y="-102.35" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">cpu_irq (any pending)</text>
+</g>
+<!-- PRI&#45;&gt;CIRQ -->
+<g id="edge20" class="edge">
+<title>PRI&#45;&gt;CIRQ</title>
+<path fill="none" stroke="#4a9eff" stroke-width="1.6" d="M1106.21,-173.43C1126.58,-160.35 1154.23,-142.6 1176.01,-128.62"/>
+<polygon fill="#4a9eff" stroke="#4a9eff" stroke-width="1.6" points="1178.12,-131.42 1184.64,-123.07 1174.34,-125.53 1178.12,-131.42"/>
+</g>
+<!-- IEN -->
+<g id="node15" class="node">
+<title>IEN</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M1234,-469.54C1234,-469.54 1120,-469.54 1120,-469.54 1114,-469.54 1108,-463.54 1108,-457.54 1108,-457.54 1108,-445.54 1108,-445.54 1108,-439.54 1114,-433.54 1120,-433.54 1120,-433.54 1234,-433.54 1234,-433.54 1240,-433.54 1246,-439.54 1246,-445.54 1246,-445.54 1246,-457.54 1246,-457.54 1246,-463.54 1240,-469.54 1234,-469.54"/>
+<text text-anchor="middle" x="1177" y="-448.74" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x008 IRQ_EN (RW)</text>
+</g>
+<!-- IEN&#45;&gt;MSK -->
+<g id="edge16" class="edge">
+<title>IEN&#45;&gt;MSK</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" stroke-dasharray="5,2" d="M1156.49,-433.13C1141.92,-420.78 1122.19,-404.03 1106.15,-390.42"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="1108.04,-387.44 1098.15,-383.63 1103.51,-392.77 1108.04,-387.44"/>
+</g>
+<!-- IEG -->
+<g id="node16" class="node">
+<title>IEG</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M1043.5,-555.54C1043.5,-555.54 912.5,-555.54 912.5,-555.54 906.5,-555.54 900.5,-549.54 900.5,-543.54 900.5,-543.54 900.5,-531.54 900.5,-531.54 900.5,-525.54 906.5,-519.54 912.5,-519.54 912.5,-519.54 1043.5,-519.54 1043.5,-519.54 1049.5,-519.54 1055.5,-525.54 1055.5,-531.54 1055.5,-531.54 1055.5,-543.54 1055.5,-543.54 1055.5,-549.54 1049.5,-555.54 1043.5,-555.54"/>
+<text text-anchor="middle" x="978" y="-534.74" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x00C IRQ_EDGE (RW)</text>
+</g>
+<!-- IEG&#45;&gt;ELD -->
+<g id="edge13" class="edge">
+<title>IEG&#45;&gt;ELD</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" stroke-dasharray="5,2" d="M978.21,-519.13C978.34,-507.8 978.52,-492.77 978.67,-479.85"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="982.18,-479.68 978.8,-469.63 975.18,-479.59 982.18,-479.68"/>
+</g>
+<!-- IPO -->
+<g id="node17" class="node">
+<title>IPO</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M1348.5,-641.54C1348.5,-641.54 1227.5,-641.54 1227.5,-641.54 1221.5,-641.54 1215.5,-635.54 1215.5,-629.54 1215.5,-629.54 1215.5,-617.54 1215.5,-617.54 1215.5,-611.54 1221.5,-605.54 1227.5,-605.54 1227.5,-605.54 1348.5,-605.54 1348.5,-605.54 1354.5,-605.54 1360.5,-611.54 1360.5,-617.54 1360.5,-617.54 1360.5,-629.54 1360.5,-629.54 1360.5,-635.54 1354.5,-641.54 1348.5,-641.54"/>
+<text text-anchor="middle" x="1288" y="-620.74" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x010 IRQ_POL (RW)</text>
+</g>
+<!-- IPO&#45;&gt;POL -->
+<g id="edge10" class="edge">
+<title>IPO&#45;&gt;POL</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" stroke-dasharray="5,2" d="M1228.6,-605.49C1217.18,-602.57 1205.27,-599.76 1194,-597.54 1162.87,-591.39 993.04,-569.7 870.96,-554.42"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="871.13,-550.91 860.78,-553.14 870.27,-557.86 871.13,-550.91"/>
+</g>
+<!-- ICL -->
+<g id="node18" class="node">
+<title>ICL</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M1230.5,-555.54C1230.5,-555.54 1107.5,-555.54 1107.5,-555.54 1101.5,-555.54 1095.5,-549.54 1095.5,-543.54 1095.5,-543.54 1095.5,-531.54 1095.5,-531.54 1095.5,-525.54 1101.5,-519.54 1107.5,-519.54 1107.5,-519.54 1230.5,-519.54 1230.5,-519.54 1236.5,-519.54 1242.5,-525.54 1242.5,-531.54 1242.5,-531.54 1242.5,-543.54 1242.5,-543.54 1242.5,-549.54 1236.5,-555.54 1230.5,-555.54"/>
+<text text-anchor="middle" x="1169" y="-534.74" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x014 IRQ_CLR (WO)</text>
+</g>
+<!-- ICL&#45;&gt;ELD -->
+<g id="edge14" class="edge">
+<title>ICL&#45;&gt;ELD</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" stroke-dasharray="5,2" d="M1130.09,-519.34C1100.15,-506.1 1058.63,-487.74 1026.69,-473.62"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="1028.09,-470.42 1017.53,-469.57 1025.26,-476.82 1028.09,-470.42"/>
+</g>
+<!-- ISO -->
+<g id="node19" class="node">
+<title>ISO</title>
+<path fill="#3d1a5c" stroke="#cc88ff" d="M1607,-641.54C1607,-641.54 1413,-641.54 1413,-641.54 1407,-641.54 1401,-635.54 1401,-629.54 1401,-629.54 1401,-617.54 1401,-617.54 1401,-611.54 1407,-605.54 1413,-605.54 1413,-605.54 1607,-605.54 1607,-605.54 1613,-605.54 1619,-611.54 1619,-617.54 1619,-617.54 1619,-629.54 1619,-629.54 1619,-635.54 1613,-641.54 1607,-641.54"/>
+<text text-anchor="middle" x="1510" y="-620.74" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x01C IRQ_SOFT (RW) SW trigger</text>
+</g>
+<!-- ISO&#45;&gt;POL -->
+<g id="edge9" class="edge">
+<title>ISO&#45;&gt;POL</title>
+<path fill="none" stroke="#cc88ff" stroke-width="1.6" stroke-dasharray="5,2" d="M1429.37,-605.53C1413.39,-602.55 1396.7,-599.71 1381,-597.54 1160.1,-566.95 1102.82,-578.51 881,-555.54 877.7,-555.2 874.35,-554.84 870.98,-554.48"/>
+<polygon fill="#cc88ff" stroke="#cc88ff" stroke-width="1.6" points="871.11,-550.97 860.78,-553.36 870.34,-557.93 871.11,-550.97"/>
+</g>
+<!-- CID -->
+<g id="node22" class="node">
+<title>CID</title>
+<ellipse fill="#1a3a5c" stroke="#4a9eff" cx="946" cy="-18.38" rx="144.5" ry="18.27"/>
+<text text-anchor="middle" x="946" y="-15.58" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">cpu_irq_id[2:0] highest priority</text>
+</g>
+<!-- VEC&#45;&gt;CID -->
+<g id="edge21" class="edge">
+<title>VEC&#45;&gt;CID</title>
+<path fill="none" stroke="#cc88ff" stroke-width="1.6" d="M946,-87C946,-75.47 946,-60.03 946,-46.81"/>
+<polygon fill="#cc88ff" stroke="#cc88ff" stroke-width="1.6" points="949.5,-46.8 946,-36.8 942.5,-46.8 949.5,-46.8"/>
+</g>
+</g>
+</svg>
+<div class="rtw"><div class="rtl">Register Map</div><table><tr><th>Offset</th><th>Name</th><th>Access</th><th>Description</th></tr><tr><td>0x000</td><td>IRQ_RAW</td><td><span class="ro">RO</span></td><td>Raw unmasked inputs</td></tr><tr><td>0x004</td><td>IRQ_PEND</td><td><span class="ro">RO</span></td><td>Pending masked+latched</td></tr><tr><td>0x008</td><td>IRQ_EN</td><td><span class="rw">RW</span></td><td>Enable mask</td></tr><tr><td>0x00C</td><td>IRQ_EDGE</td><td><span class="rw">RW</span></td><td>0=level, 1=edge per src</td></tr><tr><td>0x010</td><td>IRQ_POL</td><td><span class="rw">RW</span></td><td>0=active-low/fall, 1=active-high/rise</td></tr><tr><td>0x014</td><td>IRQ_CLR</td><td><span class="wo">WO</span></td><td>Write 1 to clear edge latch</td></tr><tr><td>0x018</td><td>IRQ_VEC</td><td><span class="ro">RO</span></td><td>[2:0] vector ID of highest pending</td></tr><tr><td>0x01C</td><td>IRQ_SOFT</td><td><span class="rw">RW</span></td><td>SW interrupt trigger</td></tr></table></div></div>
+  </div>
+  <hr class="sep"/>
+  
+  <div class="sec" id="addr-map">
+    <div class="sh"><span class="sn">10</span><h2>Address Map — 20KB Peripheral Space</h2><span class="st tm">memory map</span></div>
+    <div class="co">Each slave occupies a 4KB window. Access Watchdog (S3) only with <strong>hprot[0]=1</strong>. All other slaves accept any privilege level. Accesses to unmapped addresses return PSLVERR immediately.</div><div class="dc"><svg style="max-width:100%;height:auto;background:#ffffff;border-radius:6px;" width="1009pt" height="469pt"
+ viewBox="0.00 0.00 1008.82 469.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(36 433)">
+<title>G</title>
+<polygon fill="#ffffff" stroke="none" points="-36,36 -36,-433 972.82,-433 972.82,36 -36,36"/>
+<!-- CPU -->
+<g id="node1" class="node">
+<title>CPU</title>
+<ellipse fill="#1a3a5c" stroke="#4a9eff" cx="100.41" cy="-195" rx="100.32" ry="18.27"/>
+<text text-anchor="middle" x="100.41" y="-192.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">CPU AHB&#45;Lite Master</text>
+</g>
+<!-- A0 -->
+<g id="node2" class="node">
+<title>A0</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M560.32,-393C560.32,-393 372.32,-393 372.32,-393 366.32,-393 360.32,-387 360.32,-381 360.32,-381 360.32,-367 360.32,-367 360.32,-361 366.32,-355 372.32,-355 372.32,-355 560.32,-355 560.32,-355 566.32,-355 572.32,-361 572.32,-367 572.32,-367 572.32,-381 572.32,-381 572.32,-387 566.32,-393 560.32,-393"/>
+<text text-anchor="middle" x="466.32" y="-377.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x0000_0000 &#45; 0x0000_0FFF</text>
+<text text-anchor="middle" x="466.32" y="-365.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">4KB &#160;apb_uart &#160;S0 &#160;Any privilege</text>
+</g>
+<!-- CPU&#45;&gt;A0 -->
+<g id="edge1" class="edge">
+<title>CPU&#45;&gt;A0</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" d="M125.86,-213.01C149.93,-230.37 188.02,-256.9 222.82,-277 274.63,-306.93 288.22,-313.9 343.82,-336 358.05,-341.66 373.49,-347.04 388.43,-351.88"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="387.57,-355.28 398.16,-354.98 389.69,-348.61 387.57,-355.28"/>
+<text text-anchor="middle" x="272.32" y="-328.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">haddr[31:12]=0x000</text>
+</g>
+<!-- A1 -->
+<g id="node3" class="node">
+<title>A1</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M560.82,-321C560.82,-321 371.82,-321 371.82,-321 365.82,-321 359.82,-315 359.82,-309 359.82,-309 359.82,-295 359.82,-295 359.82,-289 365.82,-283 371.82,-283 371.82,-283 560.82,-283 560.82,-283 566.82,-283 572.82,-289 572.82,-295 572.82,-295 572.82,-309 572.82,-309 572.82,-315 566.82,-321 560.82,-321"/>
+<text text-anchor="middle" x="466.32" y="-305.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x0000_1000 &#45; 0x0000_1FFF</text>
+<text text-anchor="middle" x="466.32" y="-293.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">4KB &#160;apb_gpio &#160;S1 &#160;Any privilege</text>
+</g>
+<!-- CPU&#45;&gt;A1 -->
+<g id="edge2" class="edge">
+<title>CPU&#45;&gt;A1</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" d="M151.23,-210.92C173.15,-217.83 199.22,-225.95 222.82,-233 277.44,-249.32 339.25,-266.89 386.79,-280.22"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="386.14,-283.67 396.71,-282.99 388.03,-276.93 386.14,-283.67"/>
+<text text-anchor="middle" x="272.32" y="-262.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">0x001</text>
+</g>
+<!-- A2 -->
+<g id="node4" class="node">
+<title>A2</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M563.82,-251C563.82,-251 368.82,-251 368.82,-251 362.82,-251 356.82,-245 356.82,-239 356.82,-239 356.82,-225 356.82,-225 356.82,-219 362.82,-213 368.82,-213 368.82,-213 563.82,-213 563.82,-213 569.82,-213 575.82,-219 575.82,-225 575.82,-225 575.82,-239 575.82,-239 575.82,-245 569.82,-251 563.82,-251"/>
+<text text-anchor="middle" x="466.32" y="-235.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x0000_2000 &#45; 0x0000_2FFF</text>
+<text text-anchor="middle" x="466.32" y="-223.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">4KB &#160;apb_timer &#160;S2 &#160;Any privilege</text>
+</g>
+<!-- CPU&#45;&gt;A2 -->
+<g id="edge3" class="edge">
+<title>CPU&#45;&gt;A2</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" d="M188.57,-203.86C235.89,-208.67 295.06,-214.69 346.53,-219.92"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="346.42,-223.43 356.72,-220.96 347.12,-216.46 346.42,-223.43"/>
+<text text-anchor="middle" x="272.32" y="-218.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">0x002</text>
+</g>
+<!-- A3 -->
+<g id="node5" class="node">
+<title>A3</title>
+<path fill="#5c1a1a" stroke="#ff4444" d="M552.32,-184C552.32,-184 380.32,-184 380.32,-184 374.32,-184 368.32,-178 368.32,-172 368.32,-172 368.32,-146 368.32,-146 368.32,-140 374.32,-134 380.32,-134 380.32,-134 552.32,-134 552.32,-134 558.32,-134 564.32,-140 564.32,-146 564.32,-146 564.32,-172 564.32,-172 564.32,-178 558.32,-184 552.32,-184"/>
+<text text-anchor="middle" x="466.32" y="-168.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x0000_3000 &#45; 0x0000_3FFF</text>
+<text text-anchor="middle" x="466.32" y="-156.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">4KB &#160;apb_watchdog &#160;S3</text>
+<text text-anchor="middle" x="466.32" y="-144.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">PRIVILEGED ONLY &#160;hprot[0]=1</text>
+</g>
+<!-- CPU&#45;&gt;A3 -->
+<g id="edge4" class="edge">
+<title>CPU&#45;&gt;A3</title>
+<path fill="none" stroke="#ff4444" stroke-width="1.6" d="M178.72,-183.46C193.35,-181.48 208.54,-179.56 222.82,-178 267.03,-173.18 315.9,-169.11 358.12,-165.99"/>
+<polygon fill="#ff4444" stroke="#ff4444" stroke-width="1.6" points="358.42,-169.47 368.14,-165.25 357.91,-162.49 358.42,-169.47"/>
+<text text-anchor="middle" x="272.32" y="-180.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">0x003 hprot[0]=1</text>
+</g>
+<!-- A4 -->
+<g id="node6" class="node">
+<title>A4</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M576.82,-105C576.82,-105 355.82,-105 355.82,-105 349.82,-105 343.82,-99 343.82,-93 343.82,-93 343.82,-79 343.82,-79 343.82,-73 349.82,-67 355.82,-67 355.82,-67 576.82,-67 576.82,-67 582.82,-67 588.82,-73 588.82,-79 588.82,-79 588.82,-93 588.82,-93 588.82,-99 582.82,-105 576.82,-105"/>
+<text text-anchor="middle" x="466.32" y="-89.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">0x0000_4000 &#45; 0x0000_4FFF</text>
+<text text-anchor="middle" x="466.32" y="-77.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">4KB &#160;irq_aggregator &#160;S4 &#160;Any privilege</text>
+</g>
+<!-- CPU&#45;&gt;A4 -->
+<g id="edge5" class="edge">
+<title>CPU&#45;&gt;A4</title>
+<path fill="none" stroke="#ffa500" stroke-width="1.6" d="M145.54,-178.47C168.46,-170.12 196.99,-160.07 222.82,-152 274.62,-135.8 333.34,-119.76 380.03,-107.55"/>
+<polygon fill="#ffa500" stroke="#ffa500" stroke-width="1.6" points="381,-110.91 389.8,-105 379.24,-104.14 381,-110.91"/>
+<text text-anchor="middle" x="272.32" y="-154.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">0x004</text>
+</g>
+<!-- AU -->
+<g id="node7" class="node">
+<title>AU</title>
+<path fill="#1e2535" stroke="#2a3448" d="M547.82,-38C547.82,-38 384.82,-38 384.82,-38 378.82,-38 372.82,-32 372.82,-26 372.82,-26 372.82,-12 372.82,-12 372.82,-6 378.82,0 384.82,0 384.82,0 547.82,0 547.82,0 553.82,0 559.82,-6 559.82,-12 559.82,-12 559.82,-26 559.82,-26 559.82,-32 553.82,-38 547.82,-38"/>
+<text text-anchor="middle" x="466.32" y="-22.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#444444">0x0000_5000+ &#160;Unmapped</text>
+<text text-anchor="middle" x="466.32" y="-10.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#444444">&#45;&gt; PSLVERR</text>
+</g>
+<!-- CPU&#45;&gt;AU -->
+<g id="edge6" class="edge">
+<title>CPU&#45;&gt;AU</title>
+<path fill="none" stroke="#2a3448" stroke-width="1.6" d="M123.31,-177.05C146.95,-158.18 186.14,-128.34 222.82,-107 273.88,-77.29 288.24,-72.03 343.82,-52 354.82,-48.03 366.54,-44.28 378.18,-40.83"/>
+<polygon fill="#2a3448" stroke="#2a3448" stroke-width="1.6" points="379.3,-44.15 387.93,-38.01 377.35,-37.43 379.3,-44.15"/>
+<text text-anchor="middle" x="272.32" y="-109.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#444444">no match</text>
+</g>
+<!-- R0 -->
+<g id="node8" class="node">
+<title>R0</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M873.32,-397C873.32,-397 697.32,-397 697.32,-397 691.32,-397 685.32,-391 685.32,-385 685.32,-385 685.32,-371 685.32,-371 685.32,-365 691.32,-359 697.32,-359 697.32,-359 873.32,-359 873.32,-359 879.32,-359 885.32,-365 885.32,-371 885.32,-371 885.32,-385 885.32,-385 885.32,-391 879.32,-397 873.32,-397"/>
+<text text-anchor="middle" x="785.32" y="-381.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">UART: TXDATA RXDATA STATUS</text>
+<text text-anchor="middle" x="785.32" y="-369.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">CTRL IRQEN IRQSTAT &#160;(6 regs)</text>
+</g>
+<!-- A0&#45;&gt;R0 -->
+<g id="edge7" class="edge">
+<title>A0&#45;&gt;R0</title>
+<path fill="none" stroke="#2a3448" stroke-width="1.6" stroke-dasharray="5,2" d="M572.43,-375.33C608.75,-375.78 649.3,-376.3 685.12,-376.75"/>
+</g>
+<!-- R1 -->
+<g id="node9" class="node">
+<title>R1</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M894.82,-330C894.82,-330 675.82,-330 675.82,-330 669.82,-330 663.82,-324 663.82,-318 663.82,-318 663.82,-292 663.82,-292 663.82,-286 669.82,-280 675.82,-280 675.82,-280 894.82,-280 894.82,-280 900.82,-280 906.82,-286 906.82,-292 906.82,-292 906.82,-318 906.82,-318 906.82,-324 900.82,-330 894.82,-330"/>
+<text text-anchor="middle" x="785.32" y="-314.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">GPIO: DATA_IN DATA_OUT DIR</text>
+<text text-anchor="middle" x="785.32" y="-302.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">ALT_LO ALT_HI IRQ_EN</text>
+<text text-anchor="middle" x="785.32" y="-290.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">IRQ_EDGE IRQ_POL IRQ_STAT &#160;(9 regs)</text>
+</g>
+<!-- A1&#45;&gt;R1 -->
+<g id="edge8" class="edge">
+<title>A1&#45;&gt;R1</title>
+<path fill="none" stroke="#2a3448" stroke-width="1.6" stroke-dasharray="5,2" d="M572.87,-303C601.96,-303.27 633.74,-303.57 663.61,-303.86"/>
+</g>
+<!-- R2 -->
+<g id="node10" class="node">
+<title>R2</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M924.82,-251C924.82,-251 645.82,-251 645.82,-251 639.82,-251 633.82,-245 633.82,-239 633.82,-239 633.82,-225 633.82,-225 633.82,-219 639.82,-213 645.82,-213 645.82,-213 924.82,-213 924.82,-213 930.82,-213 936.82,-219 936.82,-225 936.82,-225 936.82,-239 936.82,-239 936.82,-245 930.82,-251 924.82,-251"/>
+<text text-anchor="middle" x="785.32" y="-235.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">TIMER CH0: LOAD VALUE CTRL COMPARE IRQSTAT</text>
+<text text-anchor="middle" x="785.32" y="-223.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">CH1: same at +0x020 offset &#160;(5 regs x2)</text>
+</g>
+<!-- A2&#45;&gt;R2 -->
+<g id="edge9" class="edge">
+<title>A2&#45;&gt;R2</title>
+<path fill="none" stroke="#2a3448" stroke-width="1.6" stroke-dasharray="5,2" d="M575.97,-232C594.61,-232 614.27,-232 633.77,-232"/>
+</g>
+<!-- R3 -->
+<g id="node11" class="node">
+<title>R3</title>
+<path fill="#5c1a1a" stroke="#ff4444" d="M901.32,-184C901.32,-184 669.32,-184 669.32,-184 663.32,-184 657.32,-178 657.32,-172 657.32,-172 657.32,-146 657.32,-146 657.32,-140 663.32,-134 669.32,-134 669.32,-134 901.32,-134 901.32,-134 907.32,-134 913.32,-140 913.32,-146 913.32,-146 913.32,-172 913.32,-172 913.32,-178 907.32,-184 901.32,-184"/>
+<text text-anchor="middle" x="785.32" y="-168.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">WDT: LOAD1 LOAD2 VALUE CTRL STATUS</text>
+<text text-anchor="middle" x="785.32" y="-156.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">UNLOCK REFRESH IRQSTAT &#160;(8 regs)</text>
+<text text-anchor="middle" x="785.32" y="-144.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">All writes require prior UNLOCK</text>
+</g>
+<!-- A3&#45;&gt;R3 -->
+<g id="edge10" class="edge">
+<title>A3&#45;&gt;R3</title>
+<path fill="none" stroke="#ff4444" stroke-width="1.6" stroke-dasharray="5,2" d="M564.58,-159C593.79,-159 626.28,-159 657.13,-159"/>
+</g>
+<!-- R4 -->
+<g id="node12" class="node">
+<title>R4</title>
+<path fill="#3d2b00" stroke="#ffa500" d="M881.32,-105C881.32,-105 689.32,-105 689.32,-105 683.32,-105 677.32,-99 677.32,-93 677.32,-93 677.32,-67 677.32,-67 677.32,-61 683.32,-55 689.32,-55 689.32,-55 881.32,-55 881.32,-55 887.32,-55 893.32,-61 893.32,-67 893.32,-67 893.32,-93 893.32,-93 893.32,-99 887.32,-105 881.32,-105"/>
+<text text-anchor="middle" x="785.32" y="-89.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">IRQA: IRQ_RAW IRQ_PEND IRQ_EN</text>
+<text text-anchor="middle" x="785.32" y="-77.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">IRQ_EDGE IRQ_POL IRQ_CLR</text>
+<text text-anchor="middle" x="785.32" y="-65.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#cdd6f4">IRQ_VEC IRQ_SOFT &#160;(8 regs)</text>
+</g>
+<!-- A4&#45;&gt;R4 -->
+<g id="edge11" class="edge">
+<title>A4&#45;&gt;R4</title>
+<path fill="none" stroke="#2a3448" stroke-width="1.6" stroke-dasharray="5,2" d="M588.97,-83.7C618.04,-83.15 648.87,-82.56 677.22,-82.03"/>
+</g>
+</g>
+</svg>
+<div class="rtw"><div class="rtl">Register Map</div><table><tr><th>Offset</th><th>Name</th><th>Access</th><th>Description</th></tr><tr><td>0x0000_0000–0x0FFF</td><td>apb_uart S0</td><td><span class="rw">RW</span></td><td>Any privilege · 6 registers</td></tr><tr><td>0x0000_1000–0x1FFF</td><td>apb_gpio S1</td><td><span class="rw">RW</span></td><td>Any privilege · 9 registers</td></tr><tr><td>0x0000_2000–0x2FFF</td><td>apb_timer S2</td><td><span class="rw">RW</span></td><td>Any privilege · 5 regs × 2 channels</td></tr><tr><td>0x0000_3000–0x3FFF</td><td>apb_watchdog S3</td><td><span class="rws">RW*</span></td><td>PRIVILEGED ONLY · 8 registers · unlock required</td></tr><tr><td>0x0000_4000–0x4FFF</td><td>irq_aggregator S4</td><td><span class="rw">RW</span></td><td>Any privilege · 8 registers</td></tr><tr><td>0x0000_5000+</td><td>— unmapped —</td><td><span class="rw">—</span></td><td>Returns PSLVERR immediately</td></tr></table></div></div>
+  </div>
+  <hr class="sep"/>
+
+  <div class="deliv">
+    <h3>Deliverables — files to create in <code>your_rtl/</code></h3>
+    <code>reset_sync.v</code> &nbsp;·&nbsp;
+    <code>ahb_to_apb_bridge.v</code> &nbsp;·&nbsp;
+    <code>apb_fabric5.v</code> &nbsp;·&nbsp;
+    <code>apb_uart.v</code> &nbsp;·&nbsp;
+    <code>apb_gpio.v</code> &nbsp;·&nbsp;
+    <code>apb_timer.v</code> &nbsp;·&nbsp;
+    <code>apb_watchdog.v</code> &nbsp;·&nbsp;
+    <code>irq_aggregator.v</code> &nbsp;·&nbsp;
+    <code>secure_periph_soc.v</code>
+  </div>
+</main>
+<script>
+const secs=document.querySelectorAll('.sec'),lnks=document.querySelectorAll('nav a');
+window.addEventListener('scroll',()=>{
+  let cur='';
+  secs.forEach(s=>{if(window.scrollY>=s.offsetTop-90)cur=s.id;});
+  lnks.forEach(a=>{a.classList.toggle('active',a.getAttribute('href')==='#'+cur);});
+});
+</script>
+</body></html>
