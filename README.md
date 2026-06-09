@@ -5,7 +5,7 @@
 Design and implement industrial-complexity SoC hardware in synthesizable Verilog.
 Three difficulty levels — Easy, Medium, Hard — each requiring participants to:
 
-1. **Read** `architecture.html` — the only reference document provided
+1. **Read** `architecture.html` — the only reference document provided (See `problems/easy/docs/architecture.html`)
 2. **Infer** YAML specifications for each IP block from the visual diagrams
 3. **Generate** parameterized Verilog using the provided RTL generation library
 4. **Stitch** all IPs into a top-level SoC module
