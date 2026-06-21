@@ -8,7 +8,7 @@ Unlike the cloud-based agents (`starter_agent.py`, `vertexai_express_agent.py`) 
 
 | File | Description |
 |------|-------------|
-| `rtl_agent_updated.py` | LangChain ReAct agent that writes Verilog RTL, compiles with iverilog, and runs simulation |
+| `rtl_agent.py` | LangChain ReAct agent that writes Verilog RTL, compiles with iverilog, and runs simulation |
 | `requirements_on_prem.txt` | Python dependencies (langchain-core, langchain-openai, langgraph, etc.) |
 
 The agent acts as an RTL / hardware engineering expert. Given a natural-language task description, it:
