@@ -84,10 +84,9 @@ Choose a model that fits within your laptop's RAM. Recommended models for Snapdr
 
 | Model | Size | RAM Needed | Notes |
 |-------|------|-----------|-------|
-| `google/gemma-4-e2b` | ~3 GB | 8 GB+ | Default in the agent script |
+| `google/gemma-4-e2b` | ~7 GB | 12 GB+ | Default in the agent script |
 | `microsoft/Phi-3-mini-4k-instruct` | ~2.5 GB | 8 GB+ | Very fast, good for simple tasks |
-| `llama-3.2-3b-instruct` | ~2 GB | 8 GB+ | Small, efficient |
-| `llama-3.2-1b-instruct` | ~1 GB | 8 GB+ | Fastest option, lower quality |
+
 
 In LM Studio:
 
