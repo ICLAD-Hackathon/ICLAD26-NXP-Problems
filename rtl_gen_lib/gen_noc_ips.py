@@ -10,87 +10,197 @@ def _h(m, d=""):
 
 
 def gen_tilelink_router(spec):
-    """Required: name, node_x, node_y, data_width, addr_width. Optional: num_ports"""
+    """Required: name, node_x, node_y, data_width, addr_width. Optional: num_ports (5=N+S+E+W+Local)"""
     n     = opt(spec, "name", "tl_router")
     nx    = int(required(spec, "node_x",      "tilelink_router"))
     ny    = int(required(spec, "node_y",      "tilelink_router"))
     dw    = int(required(spec, "data_width",  "tilelink_router"))
     aw    = int(required(spec, "addr_width",  "tilelink_router"))
-    ports = int(opt(spec, "num_ports", 4))
-    sw   = dw // 8
+    ports = int(opt(spec, "num_ports", 5))
+    sw    = dw // 8
 
-    code = _h(n, f"TileLink-UL router node=({nx},{ny}) ports={ports} data={dw}b")
+    code = _h(n, f"TileLink-UL router node=({nx},{ny}) ports={ports} N+S+E+W+Local data={dw}b addr={aw}b")
     code += f"""\
-// TileLink-UL (TL-UL) Router
-// Port ordering: 0=North 1=South 2=East 3=West (4=Local if present)
-// Channel A: request  (opcode, param, size, source, address, mask, data, corrupt, valid, ready)
-// Channel D: response (opcode, param, size, sink, source, denied, data, corrupt, valid, ready)
+// TileLink-UL (TL-UL) 5-port Router
+// Port ordering: 0=North 1=South 2=East 3=West 4=Local
+// Address encoding: addr[{aw-1}:{aw-4}]=dest_x  addr[{aw-5}:{aw-8}]=dest_y
+// XY routing: East/West first, then North/South, then Local
 //
-// Routing: X-first then Y (XY routing)
-//   If target_x > my_x: route East (port 2)
-//   If target_x < my_x: route West (port 3)
-//   Else if target_y > my_y: route North (port 0)
-//   Else if target_y < my_y: route South (port 1)
-//   Else: local (port 4)
-
+// Channel A: opcode param size source addr mask data valid ready
+// Channel D: opcode param size source data valid ready
 module {n} #(
-    parameter NODE_X  = {nx},
-    parameter NODE_Y  = {ny},
-    parameter DATA_W  = {dw},
-    parameter ADDR_W  = {aw},
-    parameter SIZE_W  = 3,
-    parameter SOURCE_W= 4,
-    parameter MASK_W  = {sw}
+    parameter NODE_X   = {nx},
+    parameter NODE_Y   = {ny},
+    parameter DATA_W   = {dw},
+    parameter ADDR_W   = {aw},
+    parameter SIZE_W   = 3,
+    parameter SOURCE_W = 4,
+    parameter MASK_W   = {sw}
 )(
     input  wire clk, rst_n,
-    // Port 0 (North) — A channel in, D channel out
-    input  wire [2:0]       p0_a_opcode,  input  wire [2:0]  p0_a_param,
-    input  wire [SIZE_W-1:0]  p0_a_size,  input  wire [SOURCE_W-1:0] p0_a_source,
-    input  wire [ADDR_W-1:0]  p0_a_addr,  input  wire [MASK_W-1:0]   p0_a_mask,
-    input  wire [DATA_W-1:0]  p0_a_data,  input  wire p0_a_valid,   output wire p0_a_ready,
-    output wire [2:0]         p0_d_opcode, output wire [1:0]  p0_d_param,
-    output wire [SIZE_W-1:0]  p0_d_size,  output wire [SOURCE_W-1:0] p0_d_source,
-    output wire [DATA_W-1:0]  p0_d_data,  output wire p0_d_valid,   input  wire p0_d_ready,
-    // Port 1 (South)
-    input  wire [2:0]         p1_a_opcode, input  wire [2:0]  p1_a_param,
-    input  wire [SIZE_W-1:0]  p1_a_size,  input  wire [SOURCE_W-1:0] p1_a_source,
-    input  wire [ADDR_W-1:0]  p1_a_addr,  input  wire [MASK_W-1:0]   p1_a_mask,
-    input  wire [DATA_W-1:0]  p1_a_data,  input  wire p1_a_valid,   output wire p1_a_ready,
-    output wire [2:0]         p1_d_opcode, output wire [1:0]  p1_d_param,
-    output wire [SIZE_W-1:0]  p1_d_size,  output wire [SOURCE_W-1:0] p1_d_source,
-    output wire [DATA_W-1:0]  p1_d_data,  output wire p1_d_valid,   input  wire p1_d_ready,
-    // Local port (CPU/device attachment)
-    output wire [2:0]         loc_a_opcode, output wire [2:0]  loc_a_param,
-    output wire [SIZE_W-1:0]  loc_a_size,  output wire [SOURCE_W-1:0] loc_a_source,
-    output wire [ADDR_W-1:0]  loc_a_addr,  output wire [MASK_W-1:0]   loc_a_mask,
-    output wire [DATA_W-1:0]  loc_a_data,  output wire loc_a_valid,   input  wire loc_a_ready,
-    input  wire [2:0]         loc_d_opcode, input  wire [1:0]  loc_d_param,
-    input  wire [SIZE_W-1:0]  loc_d_size,  input  wire [SOURCE_W-1:0] loc_d_source,
-    input  wire [DATA_W-1:0]  loc_d_data,  input  wire loc_d_valid,   output wire loc_d_ready,
-    // Destination coordinates (high bits of address: [ADDR_W-1:ADDR_W-8])
-    // [ADDR_W-1:ADDR_W-4] = dest_x, [ADDR_W-5:ADDR_W-8] = dest_y
-    input  wire [3:0]         my_x, my_y   // runtime node coordinates
+    // Port 0 (North) A-in D-out
+    input  wire [2:0]          p0_a_opcode, p0_a_param,
+    input  wire [SIZE_W-1:0]   p0_a_size,
+    input  wire [SOURCE_W-1:0] p0_a_source,
+    input  wire [ADDR_W-1:0]   p0_a_addr,
+    input  wire [MASK_W-1:0]   p0_a_mask,
+    input  wire [DATA_W-1:0]   p0_a_data,
+    input  wire                p0_a_valid,
+    output wire                p0_a_ready,
+    output wire [2:0]          p0_d_opcode,
+    output wire [1:0]          p0_d_param,
+    output wire [SIZE_W-1:0]   p0_d_size,
+    output wire [SOURCE_W-1:0] p0_d_source,
+    output wire [DATA_W-1:0]   p0_d_data,
+    output wire                p0_d_valid,
+    input  wire                p0_d_ready,
+    // Port 1 (South) A-in D-out
+    input  wire [2:0]          p1_a_opcode, p1_a_param,
+    input  wire [SIZE_W-1:0]   p1_a_size,
+    input  wire [SOURCE_W-1:0] p1_a_source,
+    input  wire [ADDR_W-1:0]   p1_a_addr,
+    input  wire [MASK_W-1:0]   p1_a_mask,
+    input  wire [DATA_W-1:0]   p1_a_data,
+    input  wire                p1_a_valid,
+    output wire                p1_a_ready,
+    output wire [2:0]          p1_d_opcode,
+    output wire [1:0]          p1_d_param,
+    output wire [SIZE_W-1:0]   p1_d_size,
+    output wire [SOURCE_W-1:0] p1_d_source,
+    output wire [DATA_W-1:0]   p1_d_data,
+    output wire                p1_d_valid,
+    input  wire                p1_d_ready,
+    // Port 2 (East) A-in D-out
+    input  wire [2:0]          p2_a_opcode, p2_a_param,
+    input  wire [SIZE_W-1:0]   p2_a_size,
+    input  wire [SOURCE_W-1:0] p2_a_source,
+    input  wire [ADDR_W-1:0]   p2_a_addr,
+    input  wire [MASK_W-1:0]   p2_a_mask,
+    input  wire [DATA_W-1:0]   p2_a_data,
+    input  wire                p2_a_valid,
+    output wire                p2_a_ready,
+    output wire [2:0]          p2_d_opcode,
+    output wire [1:0]          p2_d_param,
+    output wire [SIZE_W-1:0]   p2_d_size,
+    output wire [SOURCE_W-1:0] p2_d_source,
+    output wire [DATA_W-1:0]   p2_d_data,
+    output wire                p2_d_valid,
+    input  wire                p2_d_ready,
+    // Port 3 (West) A-in D-out
+    input  wire [2:0]          p3_a_opcode, p3_a_param,
+    input  wire [SIZE_W-1:0]   p3_a_size,
+    input  wire [SOURCE_W-1:0] p3_a_source,
+    input  wire [ADDR_W-1:0]   p3_a_addr,
+    input  wire [MASK_W-1:0]   p3_a_mask,
+    input  wire [DATA_W-1:0]   p3_a_data,
+    input  wire                p3_a_valid,
+    output wire                p3_a_ready,
+    output wire [2:0]          p3_d_opcode,
+    output wire [1:0]          p3_d_param,
+    output wire [SIZE_W-1:0]   p3_d_size,
+    output wire [SOURCE_W-1:0] p3_d_source,
+    output wire [DATA_W-1:0]   p3_d_data,
+    output wire                p3_d_valid,
+    input  wire                p3_d_ready,
+    // Port 4 (Local) A-out D-in
+    output wire [2:0]          loc_a_opcode, loc_a_param,
+    output wire [SIZE_W-1:0]   loc_a_size,
+    output wire [SOURCE_W-1:0] loc_a_source,
+    output wire [ADDR_W-1:0]   loc_a_addr,
+    output wire [MASK_W-1:0]   loc_a_mask,
+    output wire [DATA_W-1:0]   loc_a_data,
+    output wire                loc_a_valid,
+    input  wire                loc_a_ready,
+    input  wire [2:0]          loc_d_opcode,
+    input  wire [1:0]          loc_d_param,
+    input  wire [SIZE_W-1:0]   loc_d_size,
+    input  wire [SOURCE_W-1:0] loc_d_source,
+    input  wire [DATA_W-1:0]   loc_d_data,
+    input  wire                loc_d_valid,
+    output wire                loc_d_ready
 );
-    // Simplified: route all A-channel packets to local port (single-node sim)
-    // Full mesh routing requires interconnect with neighbor routers
-    assign loc_a_opcode = p0_a_valid ? p0_a_opcode : p1_a_opcode;
-    assign loc_a_param  = p0_a_valid ? p0_a_param  : p1_a_param;
-    assign loc_a_size   = p0_a_valid ? p0_a_size   : p1_a_size;
-    assign loc_a_source = p0_a_valid ? p0_a_source : p1_a_source;
-    assign loc_a_addr   = p0_a_valid ? p0_a_addr   : p1_a_addr;
-    assign loc_a_mask   = p0_a_valid ? p0_a_mask   : p1_a_mask;
-    assign loc_a_data   = p0_a_valid ? p0_a_data   : p1_a_data;
-    assign loc_a_valid  = p0_a_valid || p1_a_valid;
-    assign p0_a_ready   = loc_a_ready && p0_a_valid;
-    assign p1_a_ready   = loc_a_ready && !p0_a_valid;
-    // Route D responses back to requesting port (simplified: broadcast)
+    // ------------------------------------------------------------------
+    // Incoming A-channel arbitration: priority p0 > p1 > p2 > p3 > loc
+    // ------------------------------------------------------------------
+    // Select highest-priority incoming valid packet
+    wire any_in = p0_a_valid | p1_a_valid | p2_a_valid | p3_a_valid;
+    wire [2:0]          sel_opcode = p0_a_valid ? p0_a_opcode :
+                                     p1_a_valid ? p1_a_opcode :
+                                     p2_a_valid ? p2_a_opcode : p3_a_opcode;
+    wire [2:0]          sel_param  = p0_a_valid ? p0_a_param :
+                                     p1_a_valid ? p1_a_param :
+                                     p2_a_valid ? p2_a_param  : p3_a_param;
+    wire [SIZE_W-1:0]   sel_size   = p0_a_valid ? p0_a_size :
+                                     p1_a_valid ? p1_a_size :
+                                     p2_a_valid ? p2_a_size   : p3_a_size;
+    wire [SOURCE_W-1:0] sel_source = p0_a_valid ? p0_a_source :
+                                     p1_a_valid ? p1_a_source :
+                                     p2_a_valid ? p2_a_source : p3_a_source;
+    wire [ADDR_W-1:0]   sel_addr   = p0_a_valid ? p0_a_addr :
+                                     p1_a_valid ? p1_a_addr :
+                                     p2_a_valid ? p2_a_addr   : p3_a_addr;
+    wire [MASK_W-1:0]   sel_mask   = p0_a_valid ? p0_a_mask :
+                                     p1_a_valid ? p1_a_mask :
+                                     p2_a_valid ? p2_a_mask   : p3_a_mask;
+    wire [DATA_W-1:0]   sel_data   = p0_a_valid ? p0_a_data :
+                                     p1_a_valid ? p1_a_data :
+                                     p2_a_valid ? p2_a_data   : p3_a_data;
+
+    // ------------------------------------------------------------------
+    // XY Routing: inspect dest_x/dest_y encoded in top 8 bits of address
+    // ------------------------------------------------------------------
+    wire [3:0] dest_x = sel_addr[ADDR_W-1  : ADDR_W-4];
+    wire [3:0] dest_y = sel_addr[ADDR_W-5  : ADDR_W-8];
+    wire go_east  = any_in && (dest_x > NODE_X[3:0]);
+    wire go_west  = any_in && (dest_x < NODE_X[3:0]);
+    wire go_north = any_in && (dest_x == NODE_X[3:0]) && (dest_y > NODE_Y[3:0]);
+    wire go_south = any_in && (dest_x == NODE_X[3:0]) && (dest_y < NODE_Y[3:0]);
+    wire go_local = any_in && (dest_x == NODE_X[3:0]) && (dest_y == NODE_Y[3:0]);
+
+    // ------------------------------------------------------------------
+    // Route to output port
+    // ------------------------------------------------------------------
+    // Local (p4) output: receives packets destined for this node
+    assign loc_a_opcode = sel_opcode;
+    assign loc_a_param  = sel_param;
+    assign loc_a_size   = sel_size;
+    assign loc_a_source = sel_source;
+    assign loc_a_addr   = sel_addr;
+    assign loc_a_mask   = sel_mask;
+    assign loc_a_data   = sel_data;
+    assign loc_a_valid  = go_local;
+
+    // East output (p2_a_ready used for flow control toward east neighbor)
+    // We re-use p2/p3 output as "forwarding" ports by wiring them via the top level
+    // For behavioral sim: each router simply forwards to local when dest matches self
+    // Inter-router wiring is done at the top level
+
+    // Grant ready to the selected input port
+    assign p0_a_ready = p0_a_valid && (go_local ? loc_a_ready :
+                        go_east ? 1'b1 : go_west ? 1'b1 :
+                        go_north ? 1'b1 : go_south ? 1'b1 : 1'b0);
+    assign p1_a_ready = !p0_a_valid && p1_a_valid && (go_local ? loc_a_ready : 1'b1);
+    assign p2_a_ready = !p0_a_valid && !p1_a_valid && p2_a_valid && (go_local ? loc_a_ready : 1'b1);
+    assign p3_a_ready = !p0_a_valid && !p1_a_valid && !p2_a_valid && p3_a_valid &&
+                        (go_local ? loc_a_ready : 1'b1);
+
+    // ------------------------------------------------------------------
+    // D-channel: responses from local device go back to requesting port
+    // Simplified: broadcast to all ports; ready when any port is ready
+    // ------------------------------------------------------------------
     assign p0_d_opcode = loc_d_opcode; assign p0_d_param = loc_d_param;
-    assign p0_d_size   = loc_d_size;   assign p0_d_source= loc_d_source;
-    assign p0_d_data   = loc_d_data;   assign p0_d_valid  = loc_d_valid;
+    assign p0_d_size   = loc_d_size;   assign p0_d_source = loc_d_source;
+    assign p0_d_data   = loc_d_data;   assign p0_d_valid  = loc_d_valid && p0_a_valid;
     assign p1_d_opcode = loc_d_opcode; assign p1_d_param = loc_d_param;
-    assign p1_d_size   = loc_d_size;   assign p1_d_source= loc_d_source;
-    assign p1_d_data   = loc_d_data;   assign p1_d_valid  = loc_d_valid;
-    assign loc_d_ready = p0_d_ready || p1_d_ready;
+    assign p1_d_size   = loc_d_size;   assign p1_d_source = loc_d_source;
+    assign p1_d_data   = loc_d_data;   assign p1_d_valid  = loc_d_valid && !p0_a_valid && p1_a_valid;
+    assign p2_d_opcode = loc_d_opcode; assign p2_d_param = loc_d_param;
+    assign p2_d_size   = loc_d_size;   assign p2_d_source = loc_d_source;
+    assign p2_d_data   = loc_d_data;   assign p2_d_valid  = loc_d_valid && !p0_a_valid && !p1_a_valid && p2_a_valid;
+    assign p3_d_opcode = loc_d_opcode; assign p3_d_param = loc_d_param;
+    assign p3_d_size   = loc_d_size;   assign p3_d_source = loc_d_source;
+    assign p3_d_data   = loc_d_data;   assign p3_d_valid  = loc_d_valid && !p0_a_valid && !p1_a_valid && !p2_a_valid && p3_a_valid;
+    assign loc_d_ready = p0_d_ready | p1_d_ready | p2_d_ready | p3_d_ready;
 endmodule
 """
     return {f"{n}.v": code}
@@ -191,37 +301,26 @@ endmodule
 
 
 def gen_aes128(spec):
-    """
-    AES-128 ECB encrypt/decrypt engine — simulation-friendly.
-    Uses S-box as a 256-element LUT array (iverilog compatible).
-    4-stage pipeline: KeySchedule → SubBytes → ShiftRows+MixCols → AddRoundKey
-    For simulation speed, this is a non-pipelined 10-round iterative implementation.
-    Parameters: name, pipeline_stages (1=iterative, suitable for iverilog)
-    """
-    n    = spec.get("name", "aes128")
-    code = _h(n, "AES-128 ECB iterative engine (10 rounds, iverilog-compatible LUT S-box)")
-    code += """\
-// AES-128 iterative (non-pipelined) — 10 clock cycles per block after start
-// Interface:
-//   Write key (128-bit) to key_in, assert key_valid for 1 cycle
-//   Write plaintext to data_in, set encrypt=1 (or 0 for decrypt), assert start
-//   data_out valid when done=1
-module aes128 (
+    """AES-128 iterative engine. Parameters: name"""
+    n = spec.get("name", "aes128")
+    hdr = _h(n, "AES-128 ECB iterative engine (10 rounds, iverilog-compatible LUT S-box)")
+    # Use string concat to embed module name without f-string conflicts
+    body = """// AES-128 iterative -- 10 clocks per block after start
+// key_in[127:0] + key_valid -> expand_key
+// data_in[127:0] + start + encrypt -> data_out[127:0] when done=1
+module MODNAME (
     input  wire          clk, rst_n,
     input  wire [127:0]  key_in,
     input  wire          key_valid,
     input  wire [127:0]  data_in,
     input  wire          start,
-    input  wire          encrypt,   // 1=encrypt, 0=decrypt
+    input  wire          encrypt,
     output reg  [127:0]  data_out,
     output reg           done,
     output wire          busy
 );
-    // AES S-box (forward)
     reg [7:0] sbox [0:255];
-    reg [7:0] inv_sbox [0:255];
     initial begin
-        // AES forward S-box
         sbox[8'h00]=8'h63; sbox[8'h01]=8'h7c; sbox[8'h02]=8'h77; sbox[8'h03]=8'h7b;
         sbox[8'h04]=8'hf2; sbox[8'h05]=8'h6b; sbox[8'h06]=8'h6f; sbox[8'h07]=8'hc5;
         sbox[8'h08]=8'h30; sbox[8'h09]=8'h01; sbox[8'h0a]=8'h67; sbox[8'h0b]=8'h2b;
@@ -287,43 +386,27 @@ module aes128 (
         sbox[8'hf8]=8'h41; sbox[8'hf9]=8'h99; sbox[8'hfa]=8'h2d; sbox[8'hfb]=8'h0f;
         sbox[8'hfc]=8'hb0; sbox[8'hfd]=8'h54; sbox[8'hfe]=8'hbb; sbox[8'hff]=8'h16;
     end
-
-    // Round constants
     reg [7:0] rcon [1:10];
     initial begin
         rcon[1]=8'h01; rcon[2]=8'h02; rcon[3]=8'h04; rcon[4]=8'h08;
         rcon[5]=8'h10; rcon[6]=8'h20; rcon[7]=8'h40; rcon[8]=8'h80;
         rcon[9]=8'h1b; rcon[10]=8'h36;
     end
-
-    // Key schedule: 11 round keys (each 128-bit)
     reg [127:0] round_key [0:10];
     integer rk_i;
     reg [127:0] state_r;
     reg [3:0]   round_cnt;
     reg         running;
-
     assign busy = running;
-
-    // GF(2^8) multiply by 2
     function [7:0] xtime; input [7:0] b;
         xtime = {b[6:0],1'b0} ^ (b[7] ? 8'h1b : 8'h00);
     endfunction
-
-    // SubBytes on 128-bit state (byte-by-byte)
     function [127:0] sub_bytes; input [127:0] s; integer bi;
-        begin for(bi=0;bi<16;bi=bi+1) sub_bytes[bi*8+:8] = 0; // init
-              for(bi=0;bi<16;bi=bi+1) sub_bytes[bi*8+:8] = sbox[s[bi*8+:8]]; end
+        begin for(bi=0;bi<16;bi=bi+1) sub_bytes[bi*8+:8]=0;
+              for(bi=0;bi<16;bi=bi+1) sub_bytes[bi*8+:8]=sbox[s[bi*8+:8]]; end
     endfunction
-
-    // ShiftRows (row i shifted left by i bytes)
     function [127:0] shift_rows; input [127:0] s;
         begin
-        // Row 0 (bytes 0,4,8,12): no shift
-        // Row 1 (bytes 1,5,9,13): shift left 1
-        // Row 2 (bytes 2,6,10,14): shift left 2
-        // Row 3 (bytes 3,7,11,15): shift left 3
-        // State stored column-major: state[col][row] = s[(col*4+row)*8+:8]
         shift_rows[ 0*8+:8]=s[ 0*8+:8]; shift_rows[ 4*8+:8]=s[ 4*8+:8];
         shift_rows[ 8*8+:8]=s[ 8*8+:8]; shift_rows[12*8+:8]=s[12*8+:8];
         shift_rows[ 1*8+:8]=s[ 5*8+:8]; shift_rows[ 5*8+:8]=s[ 9*8+:8];
@@ -334,8 +417,6 @@ module aes128 (
         shift_rows[11*8+:8]=s[ 7*8+:8]; shift_rows[15*8+:8]=s[11*8+:8];
         end
     endfunction
-
-    // MixColumns on one column
     function [31:0] mix_col; input [31:0] c;
         reg [7:0] s0,s1,s2,s3;
         begin
@@ -346,7 +427,6 @@ module aes128 (
                    xtime(s0)^s1^s2^xtime(s3)^s3^s0};
         end
     endfunction
-
     function [127:0] mix_columns; input [127:0] s;
         begin
         mix_columns[ 31: 0]=mix_col(s[ 31: 0]);
@@ -355,15 +435,12 @@ module aes128 (
         mix_columns[127:96]=mix_col(s[127:96]);
         end
     endfunction
-
-    // Key expansion
     task expand_key;
         integer i; reg [31:0] temp;
         begin
             round_key[0] = key_in;
             for (i=1; i<=10; i=i+1) begin
-                temp = round_key[i-1][31:0];  // last word of previous key
-                // RotWord + SubWord + Rcon
+                temp = round_key[i-1][31:0];
                 temp = {sbox[temp[23:16]]^rcon[i], sbox[temp[15:8]],
                         sbox[temp[7:0]], sbox[temp[31:24]]};
                 round_key[i][127:96] = round_key[i-1][127:96] ^ temp;
@@ -373,7 +450,6 @@ module aes128 (
             end
         end
     endtask
-
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             running<=0; done<=0; round_cnt<=0; state_r<=0; data_out<=0;
@@ -383,24 +459,22 @@ module aes128 (
             if (key_valid) expand_key();
             if (start && !running) begin
                 state_r  <= data_in ^ round_key[0];
-                running  <= 1;
-                round_cnt<= 1;
+                running  <= 1; round_cnt <= 1;
             end else if (running) begin
                 if (round_cnt < 10) begin
                     state_r   <= mix_columns(shift_rows(sub_bytes(state_r))) ^ round_key[round_cnt];
                     round_cnt <= round_cnt + 1;
                 end else begin
-                    // Final round: no MixColumns
                     data_out <= shift_rows(sub_bytes(state_r)) ^ round_key[10];
-                    done     <= 1;
-                    running  <= 0;
+                    done <= 1; running <= 0;
                 end
             end
         end
     end
 endmodule
 """
-    return {f"{n}.v": code}
+    code = hdr + body.replace('MODNAME', n)
+    return {n + '.v': code}
 
 
 GENERATORS = {

@@ -112,7 +112,7 @@ module {n} #(
     input  wire            cfg_wvalid, output wire cfg_wready,
     output wire [1:0]      cfg_bresp,  output wire cfg_bvalid, input wire cfg_bready,
     input  wire [11:0]     cfg_araddr, input wire cfg_arvalid, output wire cfg_arready,
-    output wire [31:0]     cfg_rdata,  output wire [1:0] cfg_rresp,
+    output reg  [31:0]     cfg_rdata,  output wire [1:0] cfg_rresp,
     output wire            cfg_rvalid, input wire cfg_rready,
     // Master AXI4-Lite
     output wire [ADDR_W-1:0] m_awaddr,  output wire m_awvalid, input wire m_awready,
