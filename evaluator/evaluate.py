@@ -30,19 +30,63 @@ PROBLEMS = {
     "easy": {
         "top_module": "secure_periph_soc",
         "golden_tb":  "problems/easy/golden_tb/tb_secure_periph_soc.v",
-        "timeout_s":  120,
+        "timeout_s":  180,
         "categories": {
-            "basic_rw":       list(range(101, 105)),
-            "uart_tx":        list(range(201, 204)),
-            "gpio_irq":       list(range(301, 304)),
-            "timer":          list(range(401, 404)),
-            "watchdog":       list(range(501, 503)),
-            "privilege":      list(range(601, 604)),
-            "irq_aggregator": list(range(701, 703)),
-            "reset_sync":     list(range(801, 803)),
+            "basic_rw":       list(range(101, 110)),  # T101-T109
+            "uart_tx":        list(range(201, 205)),  # T201-T204
+            "gpio_irq":       list(range(301, 306)),  # T301-T305
+            "timer":          list(range(401, 406)),  # T401-T405
+            "watchdog":       list(range(501, 507)),  # T501-T506
+            "privilege":      list(range(601, 604)),  # T601-T603
+            "irq_aggregator": list(range(701, 706)),  # T701-T705
+            "reset_sync":     list(range(801, 804)),  # T801-T803
+            "wdt_window":     list(range(901, 904)),  # T901-T903
+            "irq_priority":   list(range(1001, 1004)),# T1001-T1003
+            "addr_decode":    list(range(1101, 1103)),# T1101-T1102
+            "uart_rx":        list(range(1201, 1205)),# T1201-T1204
+            "timer_pwm":      list(range(1301, 1304)),# T1301-T1303
+            "gpio_level":     list(range(1401, 1403)),# T1401-T1402
+            "wdt_unlock":     [1501],                 # T1501
         },
     },
-    # medium and hard problems coming in a future release
+    "medium": {
+        "top_module": "noc_aes_soc",
+        "golden_tb":  "problems/medium/golden_tb/tb_noc_aes_soc.v",
+        "timeout_s":  240,
+        "categories": {
+            "reset_sync":        list(range(101, 106)),   # T101-T105
+            "noc_topology":      list(range(201, 206)),   # T201-T205
+            "aes0_encrypt":      list(range(301, 306)),   # T301-T305
+            "aes1_encrypt":      list(range(401, 406)),   # T401-T405
+            "irq_agg":           list(range(501, 505)),   # T501-T504
+            "sram_ni_idle":      list(range(601, 606)),   # T601-T605
+            "noc_ni_basic":      list(range(701, 704)),   # T701-T703
+            "noc_local_loop":    list(range(801, 806)),   # T801-T805
+            "noc_ew_routing":    list(range(901, 906)),   # T901-T905
+            "noc_ns_routing":    list(range(1001, 1006)), # T1001-T1005
+            "noc_2hop":          list(range(1101, 1104)), # T1101-T1103
+            "irq_id_order":      list(range(1201, 1203)), # T1201-T1202
+        },
+    },
+    "hard": {
+        "top_module": "crypto_soc",
+        "golden_tb":  "problems/hard/golden_tb/tb_crypto_soc.v",
+        "timeout_s":  300,
+        "categories": {
+            "reset_sync":    list(range(101, 106)),    # T101-T105
+            "noc_local":     list(range(201, 207)),    # T201-T206
+            "noc_routing":   list(range(301, 311)),    # T301-T310 (+T307-T310: remaining nodes + read-back)
+            "aes_basic":     list(range(401, 409)),    # T401-T408 (+T406-T408: done wires + AES-node SRAM)
+            "dma_basic":     list(range(501, 511)),    # T501-T510 (+T506-T510: dma1 status + idle stability)
+            "apb_periph":    list(range(601, 607)),    # T601-T606
+            "irq_crypto":    list(range(701, 705)),    # T701-T704
+            "irq_periph":    list(range(801, 809)),    # T801-T808 (+T806-T808: gpio1/wdt wiring + irq_id)
+            "soc_cfg_regs":  list(range(901, 906)),    # T901-T905
+            "mailbox":       list(range(1001, 1006)),  # T1001-T1005
+            "perf_counter":  list(range(1101, 1109)),  # T1101-T1108 (+T1106-T1108: increment/clear/re-increment)
+            "integration":   list(range(1201, 1206)),  # T1201-T1205
+        },
+    },
 }
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
