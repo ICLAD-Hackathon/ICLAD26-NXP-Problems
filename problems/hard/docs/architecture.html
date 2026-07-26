@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Multi-Domain Crypto SoC -- Architecture</title>
+<style>
+:root{--bg:#f8f9fc;--bg2:#ffffff;--bg3:#f0f2f7;--bd:#dde1eb;--fg:#1a1d2e;--dim:#6b7280;
+      --a:#1d6ed8;--a2:#2a7a1a;--a3:#b45309;--a4:#7c3aed;--danger:#b91c1c;--sw:250px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--fg);display:flex;min-height:100vh;}
+nav{position:fixed;top:0;left:0;width:var(--sw);height:100vh;background:var(--bg2);
+    border-right:1px solid var(--bd);overflow-y:auto;z-index:100;padding:0 0 2rem;
+    box-shadow:2px 0 8px rgba(0,0,0,.06);}
+.nh{padding:1.2rem 1rem 1rem;border-bottom:1px solid var(--bd);margin-bottom:.5rem;}
+.nh .t{font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--a);}
+.nh .s{font-size:.68rem;color:var(--dim);margin-top:.2rem;}
+nav a{display:block;padding:.45rem 1rem .45rem 1.2rem;font-size:.78rem;color:var(--dim);
+      text-decoration:none;border-left:2px solid transparent;transition:all .15s;}
+nav a:hover{color:var(--fg);background:var(--bg3);border-left-color:var(--a);}
+.ns{font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--dim);padding:1rem 1rem .3rem;}
+main{margin-left:var(--sw);flex:1;padding:2rem 2.5rem 4rem;max-width:1240px;}
+.ph{margin-bottom:2.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--bd);}
+.ph h1{font-size:1.6rem;font-weight:700;color:var(--fg);margin-bottom:.4rem;}
+.pm{font-size:.82rem;color:var(--dim);}
+.badge{display:inline-block;padding:.15rem .55rem;border-radius:999px;font-size:.7rem;font-weight:600;margin-right:.4rem;}
+.br{background:rgba(185,28,28,.1);color:var(--danger);border:1px solid rgba(185,28,28,.25);}
+.bi{background:rgba(29,110,216,.1);color:var(--a);border:1px solid rgba(29,110,216,.25);}
+.ba{background:rgba(180,83,9,.1);color:var(--a3);border:1px solid rgba(180,83,9,.25);}
+.sec{margin-bottom:3.5rem;scroll-margin-top:1.5rem;}
+.sh{display:flex;align-items:baseline;gap:.75rem;margin-bottom:1rem;}
+.sn{font-size:.7rem;font-weight:700;color:var(--dim);}
+.sec h2{font-size:1.1rem;font-weight:700;color:var(--fg);}
+.st{font-size:.68rem;padding:.1rem .45rem;border-radius:4px;font-weight:500;}
+.tc{background:rgba(29,110,216,.1);color:var(--a);border:1px solid rgba(29,110,216,.2);}
+.tr{background:rgba(109,40,217,.1);color:#6d28d9;border:1px solid rgba(109,40,217,.2);}
+.tg{background:rgba(42,122,26,.1);color:var(--a2);border:1px solid rgba(42,122,26,.2);}
+.ti{background:rgba(180,83,9,.1);color:var(--a3);border:1px solid rgba(180,83,9,.2);}
+.tp{background:rgba(185,28,28,.1);color:var(--danger);border:1px solid rgba(185,28,28,.2);}
+.dc{background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:1.5rem;
+    overflow-x:auto;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:1rem;}
+.dc svg{display:block;transform:scale(1.18);transform-origin:top left;}
+.rtw{margin-top:1.2rem;border-top:1px solid var(--bd);padding-top:1rem;}
+.rtl{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin-bottom:.5rem;}
+table{width:100%;border-collapse:collapse;font-size:.78rem;}
+th{background:var(--bg3);color:var(--dim);font-size:.68rem;font-weight:600;letter-spacing:.06em;
+   text-transform:uppercase;padding:.5rem .75rem;text-align:left;border-bottom:1px solid var(--bd);}
+td{padding:.4rem .75rem;border-bottom:1px solid var(--bd);vertical-align:top;color:var(--fg);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--bg3);}
+td:first-child{font-family:'Courier New',monospace;color:var(--a);font-size:.76rem;}
+td:nth-child(2){color:var(--a3);font-weight:600;}
+.co{background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;padding:.6rem 1rem;
+    font-size:.82rem;color:#78350f;margin-bottom:1rem;line-height:1.5;}
+.co strong{color:#92400e;}
+.note{background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:.6rem 1rem;
+      font-size:.82rem;color:#1e3a5f;margin-bottom:1rem;line-height:1.5;}
+.ps{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:1rem 1.2rem;
+    margin-bottom:2rem;font-size:.85rem;color:#1e3a5f;line-height:1.7;}
+.ps h3{font-size:.9rem;font-weight:700;color:#1d4ed8;margin-bottom:.5rem;}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--bd);border-radius:3px;}
+@media(max-width:768px){nav{display:none;}main{margin-left:0;padding:1rem;}}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nh"><div class="t">NXP SoC &middot; Hard</div><div class="s">Multi-Domain Crypto SoC</div></div>
+  <div class="ns">Overview</div>
+  <a href="#soc-top">01 &middot; SoC Topology</a>
+  <a href="#pkt-flow">02 &middot; Packet Flow (XY Routing)</a>
+  <a href="#cpu-fabric">03 &middot; CPU-Side Fabric</a>
+  <div class="ns">Reset</div>
+  <a href="#reset-sync">04 &middot; Reset Synchronizer</a>
+  <div class="ns">NoC</div>
+  <a href="#tl-router">05 &middot; TileLink Router</a>
+  <a href="#tl-ni">06 &middot; TileLink NI</a>
+  <a href="#axi-sram">07 &middot; AXI-Lite SRAM</a>
+  <div class="ns">Compute</div>
+  <a href="#aes-engine">08 &middot; AES-128 Engines</a>
+  <a href="#dma-engine">09 &middot; DMA Engine</a>
+  <div class="ns">Interrupt &amp; Observe</div>
+  <a href="#irq-agg">10 &middot; IRQ Aggregators</a>
+  <a href="#async-mbox">11 &middot; Async Mailbox</a>
+  <a href="#perf-cnt">12 &middot; Performance Counter</a>
+  <div class="ns">Map &amp; Contract</div>
+  <a href="#addr-map">13 &middot; Address Map</a>
+  <a href="#impl-contract">14 &middot; Naming Contract</a>
+</nav>
+<main>
+  <div class="ph">
+    <h1>Multi-Domain Crypto SoC</h1>
+    <div class="pm">
+      <span class="badge br">HARD</span>
+      <span class="badge bi">iverilog</span>
+      <span class="badge ba">TileLink-UL &middot; AXI4-Lite &middot; APB &middot; AES-128 &middot; DMA</span>
+      Architecture reference -- diagrams, signal flows, and minimal spec
+    </div>
+  </div>
+  <div class="ps">
+    <h3>Problem Statement</h3>
+    <p>Study the architecture diagrams below to understand this multi-domain SoC: a 4&times;3 TileLink NoC mesh, four AES-128 engines, two DMA channels, an AXI-Lite crossbar, an APB peripheral cluster, dual IRQ aggregators, an async mailbox, and performance counters. From the structure shown, infer the configuration of every block, generate the corresponding RTL, and stitch the complete SoC so that the provided testbench passes. All numeric parameters (widths, depths, counts) are for you to determine from the diagrams.</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- SECTION 01: SoC Topology                                      -->
+  <!-- ============================================================ -->
+  <div class="sec" id="soc-top">
+    <div class="sh"><span class="sn">01</span><h2>SoC Topology</h2><span class="st tc">4&times;3 TileLink Mesh + CPU Fabric</span></div>
+    <div class="co">
+      <strong>Reading the diagram:</strong> Column x increases left-to-right (x=0..3). Row y increases top-to-bottom (y=0..2). Node (0,0) is top-left. The CPU (with inline xbar) and both DMA engines are placed on the <strong>left side</strong> -- each connected by a short direct arrow into their column-0 inject node. No arrow crosses the mesh. AES engines occupy nodes (2,0), (2,1), (3,0), (3,1). Each horizontal gap is a bidirectional TileLink bus (East port p2 of one router meets West port p3 of its eastern neighbour). Each vertical gap is a bidirectional N-S TileLink bus (p0 North / p1 South).
+    </div>
+    <div class="dc">
+<svg width="900" height="620" viewBox="0 0 900 620" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;background:#fff;border-radius:6px;">
+<defs>
+  <marker id="ae"  markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">              <polygon points="0 0,8 3,0 6" fill="#4a9eff"/></marker>
+  <marker id="as"  markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto-start-reverse"><polygon points="0 0,8 3,0 6" fill="#4a9eff"/></marker>
+  <marker id="ane" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">              <polygon points="0 0,8 3,0 6" fill="#5fa832"/></marker>
+  <marker id="ans" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto-start-reverse"><polygon points="0 0,8 3,0 6" fill="#5fa832"/></marker>
+  <marker id="ad"  markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">              <polygon points="0 0,8 3,0 6" fill="#d97706"/></marker>
+</defs>
+
+<!-- Column labels -->
+<text x="245" y="24" fill="#6b7280" font-size="10" text-anchor="middle" font-family="Helvetica" font-weight="bold">col x=0</text>
+<text x="425" y="24" fill="#6b7280" font-size="10" text-anchor="middle" font-family="Helvetica" font-weight="bold">col x=1</text>
+<text x="605" y="24" fill="#6b7280" font-size="10" text-anchor="middle" font-family="Helvetica" font-weight="bold">col x=2</text>
+<text x="785" y="24" fill="#6b7280" font-size="10" text-anchor="middle" font-family="Helvetica" font-weight="bold">col x=3</text>
+
+<!-- Row labels -->
+<text x="4" y="115" fill="#6b7280" font-size="9" font-family="Helvetica">y=0</text>
+<text x="4" y="305" fill="#6b7280" font-size="9" font-family="Helvetica">y=1</text>
+<text x="4" y="495" fill="#6b7280" font-size="9" font-family="Helvetica">y=2</text>
+
+<!-- LEFT PANEL: CPU + inline xbar (row y=0) -->
+<rect x="16" y="80" width="95" height="60" rx="7" fill="#1a3a5c" stroke="#4a9eff" stroke-width="2"/>
+<text x="63" y="105" fill="#cdd6f4" font-size="10" text-anchor="middle" font-family="Helvetica" font-weight="bold">CPU</text>
+<text x="63" y="119" fill="#89b4fa" font-size="8" text-anchor="middle" font-family="Helvetica">AXI4-Lite</text>
+<line x1="111" y1="110" x2="116" y2="110" stroke="#4a9eff" stroke-width="1.5"/>
+<rect x="117" y="98" width="36" height="24" rx="3" fill="#1d6ed8"/>
+<text x="135" y="114" fill="#fff" font-size="8" text-anchor="middle" font-family="Helvetica" font-weight="bold">xbar</text>
+<line x1="153" y1="110" x2="173" y2="110" stroke="#4a9eff" stroke-width="1.5" marker-end="url(#ae)"/>
+
+<!-- LEFT PANEL: DMA0 (row y=1) -->
+<rect x="16" y="270" width="95" height="60" rx="7" fill="#3d2b00" stroke="#d97706" stroke-width="2"/>
+<text x="63" y="295" fill="#cdd6f4" font-size="10" text-anchor="middle" font-family="Helvetica" font-weight="bold">DMA0</text>
+<text x="63" y="309" fill="#fcd34d" font-size="8" text-anchor="middle" font-family="Helvetica">AXI master</text>
+<line x1="111" y1="300" x2="173" y2="300" stroke="#d97706" stroke-width="1.5" marker-end="url(#ad)"/>
+
+<!-- LEFT PANEL: DMA1 (row y=2) -->
+<rect x="16" y="460" width="95" height="60" rx="7" fill="#3d2b00" stroke="#d97706" stroke-width="2"/>
+<text x="63" y="485" fill="#cdd6f4" font-size="10" text-anchor="middle" font-family="Helvetica" font-weight="bold">DMA1</text>
+<text x="63" y="499" fill="#fcd34d" font-size="8" text-anchor="middle" font-family="Helvetica">AXI master</text>
+<line x1="111" y1="490" x2="173" y2="490" stroke="#d97706" stroke-width="1.5" marker-end="url(#ad)"/>
+
+<!-- E-W links y=0 -->
+<line x1="317" y1="110" x2="353" y2="110" stroke="#4a9eff" stroke-width="2" marker-start="url(#as)" marker-end="url(#ae)"/>
+<line x1="497" y1="110" x2="533" y2="110" stroke="#4a9eff" stroke-width="2" marker-start="url(#as)" marker-end="url(#ae)"/>
+<line x1="677" y1="110" x2="713" y2="110" stroke="#4a9eff" stroke-width="2" marker-start="url(#as)" marker-end="url(#ae)"/>
+
+<!-- E-W links y=1 -->
+<line x1="317" y1="300" x2="353" y2="300" stroke="#4a9eff" stroke-width="2" marker-start="url(#as)" marker-end="url(#ae)"/>
+<line x1="497" y1="300" x2="533" y2="300" stroke="#4a9eff" stroke-width="2" marker-start="url(#as)" marker-end="url(#ae)"/>
+<line x1="677" y1="300" x2="713" y2="300" stroke="#4a9eff" stroke-width="2" marker-start="url(#as)" marker-end="url(#ae)"/>
+
+<!-- E-W links y=2 -->
+<line x1="317" y1="490" x2="353" y2="490" stroke="#4a9eff" stroke-width="2" marker-start="url(#as)" marker-end="url(#ae)"/>
+<line x1="497" y1="490" x2="533" y2="490" stroke="#4a9eff" stroke-width="2" marker-start="url(#as)" marker-end="url(#ae)"/>
+<line x1="677" y1="490" x2="713" y2="490" stroke="#4a9eff" stroke-width="2" marker-start="url(#as)" marker-end="url(#ae)"/>
+
+<!-- N-S links x=0 -->
+<line x1="245" y1="142" x2="245" y2="268" stroke="#5fa832" stroke-width="2" marker-start="url(#ans)" marker-end="url(#ane)"/>
+<line x1="245" y1="332" x2="245" y2="458" stroke="#5fa832" stroke-width="2" marker-start="url(#ans)" marker-end="url(#ane)"/>
+
+<!-- N-S links x=1 -->
+<line x1="425" y1="142" x2="425" y2="268" stroke="#5fa832" stroke-width="2" marker-start="url(#ans)" marker-end="url(#ane)"/>
+<line x1="425" y1="332" x2="425" y2="458" stroke="#5fa832" stroke-width="2" marker-start="url(#ans)" marker-end="url(#ane)"/>
+
+<!-- N-S links x=2 -->
+<line x1="605" y1="142" x2="605" y2="268" stroke="#5fa832" stroke-width="2" marker-start="url(#ans)" marker-end="url(#ane)"/>
+<line x1="605" y1="332" x2="605" y2="458" stroke="#5fa832" stroke-width="2" marker-start="url(#ans)" marker-end="url(#ane)"/>
+
+<!-- N-S links x=3 -->
+<line x1="785" y1="142" x2="785" y2="268" stroke="#5fa832" stroke-width="2" marker-start="url(#ans)" marker-end="url(#ane)"/>
+<line x1="785" y1="332" x2="785" y2="458" stroke="#5fa832" stroke-width="2" marker-start="url(#ans)" marker-end="url(#ane)"/>
+
+<!-- NODE (0,0) CPU entry -->
+<rect x="175" y="80" width="140" height="60" rx="8" fill="#1a3a5c" stroke="#4a9eff" stroke-width="2"/>
+<text x="245" y="104" fill="#cdd6f4" font-size="9" text-anchor="middle" font-family="Helvetica" font-weight="bold">router_00  ni_00</text>
+<text x="245" y="118" fill="#89b4fa" font-size="8.5" text-anchor="middle" font-family="Helvetica">sram_00</text>
+<text x="245" y="154" fill="#4a9eff" font-size="7.5" text-anchor="middle" font-family="Helvetica">(0,0)  CPU entry</text>
+
+<!-- NODE (1,0) -->
+<rect x="355" y="80" width="140" height="60" rx="8" fill="#2d3748" stroke="#5c6070" stroke-width="1.5"/>
+<text x="425" y="104" fill="#cdd6f4" font-size="9" text-anchor="middle" font-family="Helvetica">router_10  ni_10</text>
+<text x="425" y="118" fill="#94a3b8" font-size="8.5" text-anchor="middle" font-family="Helvetica">sram_10</text>
+<text x="425" y="154" fill="#6b7280" font-size="7.5" text-anchor="middle" font-family="Helvetica">(1,0)</text>
+
+<!-- NODE (2,0) AES2 -->
+<rect x="535" y="80" width="140" height="60" rx="8" fill="#3d1515" stroke="#ef4444" stroke-width="2"/>
+<text x="605" y="104" fill="#cdd6f4" font-size="9" text-anchor="middle" font-family="Helvetica">router_20  ni_20</text>
+<text x="605" y="118" fill="#fca5a5" font-size="8.5" text-anchor="middle" font-family="Helvetica">sram_20 | AES2</text>
+<text x="605" y="154" fill="#ef4444" font-size="7.5" text-anchor="middle" font-family="Helvetica">(2,0)  AES2</text>
+
+<!-- NODE (3,0) AES0 -->
+<rect x="715" y="80" width="140" height="60" rx="8" fill="#3d1515" stroke="#ef4444" stroke-width="2"/>
+<text x="785" y="104" fill="#cdd6f4" font-size="9" text-anchor="middle" font-family="Helvetica">router_30  ni_30</text>
+<text x="785" y="118" fill="#fca5a5" font-size="8.5" text-anchor="middle" font-family="Helvetica">sram_30 | AES0</text>
+<text x="785" y="154" fill="#ef4444" font-size="7.5" text-anchor="middle" font-family="Helvetica">(3,0)  AES0</text>
+
+<!-- NODE (0,1) DMA0 inject -->
+<rect x="175" y="270" width="140" height="60" rx="8" fill="#1e3010" stroke="#d97706" stroke-width="2"/>
+<text x="245" y="294" fill="#cdd6f4" font-size="9" text-anchor="middle" font-family="Helvetica" font-weight="bold">router_01  ni_01</text>
+<text x="245" y="308" fill="#fcd34d" font-size="8.5" text-anchor="middle" font-family="Helvetica">sram_01</text>
+<text x="245" y="344" fill="#d97706" font-size="7.5" text-anchor="middle" font-family="Helvetica">(0,1)  DMA0 inject</text>
+
+<!-- NODE (1,1) -->
+<rect x="355" y="270" width="140" height="60" rx="8" fill="#2d3748" stroke="#5c6070" stroke-width="1.5"/>
+<text x="425" y="294" fill="#cdd6f4" font-size="9" text-anchor="middle" font-family="Helvetica">router_11  ni_11</text>
+<text x="425" y="308" fill="#94a3b8" font-size="8.5" text-anchor="middle" font-family="Helvetica">sram_11</text>
+<text x="425" y="344" fill="#6b7280" font-size="7.5" text-anchor="middle" font-family="Helvetica">(1,1)</text>
+
+<!-- NODE (2,1) AES3 -->
+<rect x="535" y="270" width="140" height="60" rx="8" fill="#3d1515" stroke="#ef4444" stroke-width="2"/>
+<text x="605" y="294" fill="#cdd6f4" font-size="9" text-anchor="middle" font-family="Helvetica">router_21  ni_21</text>
+<text x="605" y="308" fill="#fca5a5" font-size="8.5" text-anchor="middle" font-family="Helvetica">sram_21 | AES3</text>
+<text x="605" y="344" fill="#ef4444" font-size="7.5" text-anchor="middle" font-family="Helvetica">(2,1)  AES3</text>
+
+<!-- NODE (3,1) AES1 -->
+<rect x="715" y="270" width="140" height="60" rx="8" fill="#3d1515" stroke="#ef4444" stroke-width="2"/>
+<text x="785" y="294" fill="#cdd6f4" font-size="9" text-anchor="middle" font-family="Helvetica">router_31  ni_31</text>
+<text x="785" y="308" fill="#fca5a5" font-size="8.5" text-anchor="middle" font-family="Helvetica">sram_31 | AES1</text>
+<text x="785" y="344" fill="#ef4444" font-size="7.5" text-anchor="middle" font-family="Helvetica">(3,1)  AES1</text>
+
+<!-- NODE (0,2) DMA1 inject -->
+<rect x="175" y="460" width="140" height="60" rx="8" fill="#1e3010" stroke="#d97706" stroke-width="2"/>
+<text x="245" y="484" fill="#cdd6f4" font-size="9" text-anchor="middle" font-family="Helvetica" font-weight="bold">router_02  ni_02</text>
+<text x="245" y="498" fill="#fcd34d" font-size="8.5" text-anchor="middle" font-family="Helvetica">sram_02</text>
+<text x="245" y="534" fill="#d97706" font-size="7.5" text-anchor="middle" font-family="Helvetica">(0,2)  DMA1 inject</text>
+
+<!-- NODE (1,2) -->
+<rect x="355" y="460" width="140" height="60" rx="8" fill="#2d3748" stroke="#5c6070" stroke-width="1.5"/>
+<text x="425" y="484" fill="#cdd6f4" font-size="9" text-anchor="middle" font-family="Helvetica">router_12  ni_12</text>
+<text x="425" y="498" fill="#94a3b8" font-size="8.5" text-anchor="middle" font-family="Helvetica">sram_12</text>
+<text x="425" y="534" fill="#6b7280" font-size="7.5" text-anchor="middle" font-family="Helvetica">(1,2)</text>
+
+<!-- NODE (2,2) -->
+<rect x="535" y="460" width="140" height="60" rx="8" fill="#2d3748" stroke="#5c6070" stroke-width="1.5"/>
+<text x="605" y="484" fill="#cdd6f4" font-size="9" text-anchor="middle" font-family="Helvetica">router_22  ni_22</text>
+<text x="605" y="498" fill="#94a3b8" font-size="8.5" text-anchor="middle" font-family="Helvetica">sram_22</text>
+<text x="605" y="534" fill="#6b7280" font-size="7.5" text-anchor="middle" font-family="Helvetica">(2,2)</text>
+
+<!-- NODE (3,2) -->
+<rect x="715" y="460" width="140" height="60" rx="8" fill="#2d3748" stroke="#5c6070" stroke-width="1.5"/>
+<text x="785" y="484" fill="#cdd6f4" font-size="9" text-anchor="middle" font-family="Helvetica">router_32  ni_32</text>
+<text x="785" y="498" fill="#94a3b8" font-size="8.5" text-anchor="middle" font-family="Helvetica">sram_32</text>
+<text x="785" y="534" fill="#6b7280" font-size="7.5" text-anchor="middle" font-family="Helvetica">(3,2)</text>
+
+<!-- Legend -->
+<line x1="175" y1="578" x2="213" y2="578" stroke="#4a9eff" stroke-width="2" marker-start="url(#as)" marker-end="url(#ae)"/>
+<text x="220" y="582" fill="#6b7280" font-size="8" font-family="Helvetica">E-W TileLink bus (p2 East / p3 West)</text>
+<line x1="450" y1="572" x2="450" y2="590" stroke="#5fa832" stroke-width="2" marker-start="url(#ans)" marker-end="url(#ane)"/>
+<text x="458" y="583" fill="#6b7280" font-size="8" font-family="Helvetica">N-S TileLink bus (p0 North / p1 South)</text>
+<line x1="685" y1="578" x2="709" y2="578" stroke="#d97706" stroke-width="2" marker-end="url(#ad)"/>
+<text x="716" y="582" fill="#6b7280" font-size="8" font-family="Helvetica">DMA inject path</text>
+</svg>
+    </div>
+    <div class="note">
+      <strong>Link wiring principle:</strong> Each mesh link is a single shared TileLink bus. The East port (p2) of one router and the West port (p3) of its eastern neighbour are the <em>same physical wires</em> -- they must be connected together, not driven independently. The same applies to the North (p0) and South (p1) ports of vertically adjacent routers.
+    </div>
+    <div class="dc">
+      <div class="rtl">Node inventory</div>
+      <table><tr><th>Node</th><th>Modules</th><th>Special role</th></tr>
+      <tr><td>(0,0)</td><td>router_00, ni_00, sram_00</td><td>CPU AXI4-Lite entry -- via AXI crossbar S0</td></tr>
+      <tr><td>(0,1)</td><td>router_01, ni_01, sram_01</td><td>DMA0 dedicated inject port</td></tr>
+      <tr><td>(0,2)</td><td>router_02, ni_02, sram_02</td><td>DMA1 dedicated inject port</td></tr>
+      <tr><td>(1,0..2)</td><td>router_1Y, ni_1Y, sram_1Y</td><td>General purpose</td></tr>
+      <tr><td>(2,0)</td><td>router_20, ni_20, sram_20</td><td>AES2 engine co-located</td></tr>
+      <tr><td>(2,1)</td><td>router_21, ni_21, sram_21</td><td>AES3 engine co-located</td></tr>
+      <tr><td>(2,2)</td><td>router_22, ni_22, sram_22</td><td>General purpose</td></tr>
+      <tr><td>(3,0)</td><td>router_30, ni_30, sram_30</td><td>AES0 engine co-located</td></tr>
+      <tr><td>(3,1)</td><td>router_31, ni_31, sram_31</td><td>AES1 engine co-located</td></tr>
+      <tr><td>(3,2)</td><td>router_32, ni_32, sram_32</td><td>General purpose</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- SECTION 02: Packet Flow Walkthrough                           -->
+  <!-- ============================================================ -->
+  <div class="sec" id="pkt-flow">
+    <div class="sh"><span class="sn">02</span><h2>Packet Flow: XY Routing Walkthrough</h2><span class="st tc">Step-by-step example</span></div>
+    <div class="co">
+      <strong>How XY routing works:</strong> The router inspects <strong>addr[31:28] = dest_x</strong> and <strong>addr[27:24] = dest_y</strong>. First it hops East or West until dest_x matches, then it hops North or South until dest_y matches, then it delivers locally. The diagram below shows a CPU write to address <code>0x1100_xxxx</code> (dest_x=1, dest_y=1, target = node (1,1)).
+    </div>
+    <div class="dc">
+<svg width="1060" height="500" viewBox="0 0 1060 500" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;background:#fff;border-radius:6px;">
+<defs>
+  <marker id="fa" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0,9 3.5,0 7" fill="#f97316"/></marker>
+  <marker id="fb" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0,9 3.5,0 7" fill="#10b981"/></marker>
+</defs>
+
+<!-- Step labels on left -->
+<text x="10" y="80"  fill="#6b7280" font-size="10" font-family="Helvetica">STEP 1</text>
+<text x="10" y="200" fill="#6b7280" font-size="10" font-family="Helvetica">STEP 2</text>
+<text x="10" y="320" fill="#6b7280" font-size="10" font-family="Helvetica">STEP 3</text>
+<text x="10" y="420" fill="#6b7280" font-size="10" font-family="Helvetica">STEP 4</text>
+
+<!-- STEP 1 -->
+<rect x="60" y="48" width="90" height="44" rx="6" fill="#1a3a5c" stroke="#4a9eff" stroke-width="1.5"/>
+<text x="105" y="68" fill="#cdd6f4" font-size="9" text-anchor="middle" font-family="Helvetica">CPU</text>
+<text x="105" y="80" fill="#89b4fa" font-size="8" text-anchor="middle" font-family="Helvetica">AXI write</text>
+<line x1="150" y1="70" x2="195" y2="70" stroke="#f97316" stroke-width="2" marker-end="url(#fa)"/>
+<rect x="196" y="48" width="70" height="44" rx="6" fill="#1d6ed8"/>
+<text x="231" y="68" fill="#fff" font-size="9" text-anchor="middle" font-family="Helvetica">xbar</text>
+<text x="231" y="80" fill="#dbeafe" font-size="7" text-anchor="middle" font-family="Helvetica">S0 hit</text>
+<line x1="266" y1="70" x2="311" y2="70" stroke="#f97316" stroke-width="2" marker-end="url(#fa)"/>
+<rect x="312" y="48" width="80" height="44" rx="6" fill="#2d1a3e" stroke="#c084fc" stroke-width="1.5"/>
+<text x="352" y="68" fill="#cdd6f4" font-size="9" text-anchor="middle" font-family="Helvetica">ni_00</text>
+<text x="352" y="80" fill="#c084fc" font-size="7" text-anchor="middle" font-family="Helvetica">AXI-&gt;TL-A</text>
+<line x1="392" y1="70" x2="437" y2="70" stroke="#f97316" stroke-width="2" marker-end="url(#fa)"/>
+<rect x="438" y="48" width="90" height="44" rx="6" fill="#1e2d4a" stroke="#4a9eff" stroke-width="1.5"/>
+<text x="483" y="68" fill="#cdd6f4" font-size="9" text-anchor="middle" font-family="Helvetica">router_00</text>
+<text x="483" y="80" fill="#89b4fa" font-size="7" text-anchor="middle" font-family="Helvetica">inj port</text>
+<text x="542" y="64" fill="#f97316" font-size="9" font-family="Helvetica">addr[31:28]=1 &gt; 0</text>
+<text x="542" y="78" fill="#f97316" font-size="9" font-family="Helvetica">-&gt; forward East (p2)</text>
+
+<!-- STEP 2 -->
+<rect x="60" y="168" width="90" height="44" rx="6" fill="#1e2d4a" stroke="#4a9eff" stroke-width="1.5"/>
+<text x="105" y="188" fill="#cdd6f4" font-size="9" text-anchor="middle" font-family="Helvetica">router_00</text>
+<text x="105" y="200" fill="#89b4fa" font-size="7" text-anchor="middle" font-family="Helvetica">p2 ao (East out)</text>
+<text x="155" y="190" fill="#4a9eff" font-size="10" font-family="Helvetica">-&gt;</text>
+<text x="156" y="202" fill="#6b7280" font-size="8" font-family="Helvetica">ew_y0_x01</text>
+<line x1="182" y1="190" x2="225" y2="190" stroke="#f97316" stroke-width="2" marker-end="url(#fa)"/>
+<rect x="226" y="168" width="90" height="44" rx="6" fill="#1e2d4a" stroke="#4a9eff" stroke-width="1.5"/>
+<text x="271" y="188" fill="#cdd6f4" font-size="9" text-anchor="middle" font-family="Helvetica">router_10</text>
+<text x="271" y="200" fill="#89b4fa" font-size="7" text-anchor="middle" font-family="Helvetica">p3 a (West in)</text>
+<text x="330" y="178" fill="#f97316" font-size="9" font-family="Helvetica">addr[31:28]=1 == 1</text>
+<text x="330" y="192" fill="#f97316" font-size="9" font-family="Helvetica">addr[27:24]=1 &gt; 0</text>
+<text x="330" y="206" fill="#f97316" font-size="9" font-family="Helvetica">-&gt; forward South (p1)</text>
+
+<!-- STEP 3 -->
+<rect x="60" y="288" width="90" height="44" rx="6" fill="#1e2d4a" stroke="#4a9eff" stroke-width="1.5"/>
+<text x="105" y="308" fill="#cdd6f4" font-size="9" text-anchor="middle" font-family="Helvetica">router_10</text>
+<text x="105" y="320" fill="#89b4fa" font-size="7" text-anchor="middle" font-family="Helvetica">p1 ao (South out)</text>
+<text x="155" y="308" fill="#5fa832" font-size="10" font-family="Helvetica">-&gt;</text>
+<text x="156" y="320" fill="#6b7280" font-size="8" font-family="Helvetica">ns_x1_y01</text>
+<line x1="182" y1="310" x2="225" y2="310" stroke="#f97316" stroke-width="2" marker-end="url(#fa)"/>
+<rect x="226" y="288" width="90" height="44" rx="6" fill="#1e2d4a" stroke="#4a9eff" stroke-width="1.5"/>
+<text x="271" y="308" fill="#cdd6f4" font-size="9" text-anchor="middle" font-family="Helvetica">router_11</text>
+<text x="271" y="320" fill="#89b4fa" font-size="7" text-anchor="middle" font-family="Helvetica">p0 a (North in)</text>
+<text x="330" y="300" fill="#f97316" font-size="9" font-family="Helvetica">dest (1,1) == self (1,1)</text>
+<text x="330" y="314" fill="#10b981" font-size="9" font-family="Helvetica" font-weight="bold">-&gt; deliver LOCAL</text>
+<text x="330" y="328" fill="#10b981" font-size="9" font-family="Helvetica">drive AXI to sram_11</text>
+
+<!-- STEP 4 -->
+<rect x="60" y="388" width="90" height="44" rx="6" fill="#1a2e1a" stroke="#7bc142" stroke-width="1.5"/>
+<text x="105" y="408" fill="#cdd6f4" font-size="9" text-anchor="middle" font-family="Helvetica">sram_11</text>
+<text x="105" y="420" fill="#a6e3a1" font-size="7" text-anchor="middle" font-family="Helvetica">write completes</text>
+<line x1="150" y1="410" x2="195" y2="410" stroke="#10b981" stroke-width="2" marker-end="url(#fb)"/>
+<rect x="196" y="388" width="90" height="44" rx="6" fill="#1e2d4a" stroke="#4a9eff" stroke-width="1.5"/>
+<text x="241" y="408" fill="#cdd6f4" font-size="9" text-anchor="middle" font-family="Helvetica">router_11</text>
+<text x="241" y="420" fill="#89b4fa" font-size="7" text-anchor="middle" font-family="Helvetica">d_valid -&gt; ni_11</text>
+<line x1="286" y1="410" x2="331" y2="410" stroke="#10b981" stroke-width="2" marker-end="url(#fb)"/>
+<rect x="332" y="388" width="80" height="44" rx="6" fill="#2d1a3e" stroke="#c084fc" stroke-width="1.5"/>
+<text x="372" y="408" fill="#cdd6f4" font-size="9" text-anchor="middle" font-family="Helvetica">ni_00</text>
+<text x="372" y="420" fill="#c084fc" font-size="7" text-anchor="middle" font-family="Helvetica">bvalid -&gt; CPU</text>
+<text x="428" y="410" fill="#10b981" font-size="9" font-family="Helvetica" font-weight="bold">Write acknowledged.</text>
+
+<!-- XY Address Decode panel (pushed right) -->
+<rect x="660" y="30" width="380" height="440" rx="8" fill="#f8f9fc" stroke="#dde1eb" stroke-width="1"/>
+<text x="850" y="56" fill="#1a1d2e" font-size="12" text-anchor="middle" font-family="Helvetica" font-weight="bold">XY Address Decode</text>
+<text x="672" y="84" fill="#6b7280" font-size="10" font-family="Helvetica">Addr 0x1100_0040:</text>
+<text x="672" y="104" fill="#f97316" font-size="10" font-family="Helvetica" font-weight="bold">bits[31:28] = 0x1  -&gt; dest_x = 1</text>
+<text x="672" y="122" fill="#f97316" font-size="10" font-family="Helvetica" font-weight="bold">bits[27:24] = 0x1  -&gt; dest_y = 1</text>
+<text x="672" y="140" fill="#6b7280" font-size="10" font-family="Helvetica">bits[23:0] = local word offset</text>
+<line x1="665" y1="154" x2="1035" y2="154" stroke="#dde1eb" stroke-width="1"/>
+<text x="672" y="176" fill="#1a1d2e" font-size="10" font-family="Helvetica" font-weight="bold">Routing decision at each hop:</text>
+<text x="672" y="196" fill="#6b7280" font-size="10" font-family="Helvetica">dest_x &gt; node_x  -&gt; go East  (p2)</text>
+<text x="672" y="212" fill="#6b7280" font-size="10" font-family="Helvetica">dest_x &lt; node_x  -&gt; go West  (p3)</text>
+<text x="672" y="228" fill="#6b7280" font-size="10" font-family="Helvetica">dest_x == node_x and</text>
+<text x="672" y="244" fill="#6b7280" font-size="10" font-family="Helvetica">  dest_y &gt; node_y  -&gt; go South (p1)</text>
+<text x="672" y="260" fill="#6b7280" font-size="10" font-family="Helvetica">  dest_y &lt; node_y  -&gt; go North (p0)</text>
+<text x="672" y="276" fill="#6b7280" font-size="10" font-family="Helvetica">  dest_y == node_y -&gt; deliver local</text>
+<line x1="665" y1="290" x2="1035" y2="290" stroke="#dde1eb" stroke-width="1"/>
+<text x="672" y="312" fill="#1a1d2e" font-size="10" font-family="Helvetica" font-weight="bold">Example: 0x1100_xxxx hop path</text>
+<text x="672" y="332" fill="#f97316" font-size="10" font-family="Helvetica">(0,0) -&gt; East  -&gt; (1,0)</text>
+<text x="672" y="350" fill="#f97316" font-size="10" font-family="Helvetica">(1,0) -&gt; South -&gt; (1,1)  [deliver]</text>
+<text x="672" y="376" fill="#10b981" font-size="10" font-family="Helvetica">Total hops: 2</text>
+<text x="672" y="396" fill="#6b7280" font-size="10" font-family="Helvetica">Far corner 0x3200_xxxx:</text>
+<text x="672" y="412" fill="#6b7280" font-size="10" font-family="Helvetica">  E, E, E, S, S  -&gt; 5 hops</text>
+</svg>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- SECTION 03: CPU-Side Fabric                                   -->
+  <!-- ============================================================ -->
+  <div class="sec" id="cpu-fabric">
+    <div class="sh"><span class="sn">03</span><h2>CPU-Side Fabric</h2><span class="st tc">AXI Crossbar + APB Cluster + SoC Config Registers</span></div>
+    <div class="co">
+      The CPU AXI4-Lite master connects to a <strong>2M&times;3S AXI-Lite crossbar</strong>. Master 0 is the CPU; Master 1 is the DMA config bus (held idle unless actively programming a DMA engine). The three slave decode regions are shown below. Slave 0 spans the entire NoC address space and connects to the TileLink NI at node (0,0). Slave 1 routes to the APB bridge and peripheral cluster. Slave 2 is the SoC configuration register block (16 x 32-bit registers).
+    </div>
+    <div class="dc">
+<svg width="900" height="380" viewBox="0 0 900 380" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;background:#fff;border-radius:6px;">
+<defs>
+  <marker id="xa" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#4a9eff"/></marker>
+  <marker id="xg" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#7bc142"/></marker>
+  <marker id="xr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#f38ba8"/></marker>
+</defs>
+
+<!-- Masters on left -->
+<rect x="20" y="60" width="120" height="50" rx="6" fill="#1a3a5c" stroke="#4a9eff" stroke-width="1.5"/>
+<text x="80" y="82" fill="#cdd6f4" font-size="10" text-anchor="middle" font-family="Helvetica" font-weight="bold">CPU (M0)</text>
+<text x="80" y="96" fill="#89b4fa" font-size="8" text-anchor="middle" font-family="Helvetica">AXI4-Lite master</text>
+
+<rect x="20" y="140" width="120" height="50" rx="6" fill="#2d1a3e" stroke="#c084fc" stroke-width="1.5"/>
+<text x="80" y="162" fill="#cdd6f4" font-size="10" text-anchor="middle" font-family="Helvetica" font-weight="bold">DMA cfg (M1)</text>
+<text x="80" y="176" fill="#c084fc" font-size="8" text-anchor="middle" font-family="Helvetica">AXI4-Lite master</text>
+
+<!-- Crossbar box -->
+<rect x="200" y="30" width="180" height="240" rx="8" fill="#1d2d50" stroke="#4a9eff" stroke-width="2"/>
+<text x="290" y="56" fill="#cdd6f4" font-size="12" text-anchor="middle" font-family="Helvetica" font-weight="bold">axi_lite_xbar</text>
+<text x="290" y="74" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="Helvetica">2M x 3S  round-robin arb</text>
+<line x1="210" y1="90" x2="370" y2="90" stroke="#4a9eff" stroke-width="0.5" stroke-dasharray="3,2"/>
+<text x="290" y="110" fill="#89b4fa" font-size="9" text-anchor="middle" font-family="Helvetica">S0: 0x0000_0000</text>
+<text x="290" y="124" fill="#89b4fa" font-size="9" text-anchor="middle" font-family="Helvetica">to 0xEFFF_FFFF</text>
+<text x="290" y="138" fill="#6b7280" font-size="8" text-anchor="middle" font-family="Helvetica">NoC space</text>
+<line x1="210" y1="155" x2="370" y2="155" stroke="#4a9eff" stroke-width="0.5" stroke-dasharray="3,2"/>
+<text x="290" y="175" fill="#f38ba8" font-size="9" text-anchor="middle" font-family="Helvetica">S1: 0xF000_0000</text>
+<text x="290" y="189" fill="#f38ba8" font-size="9" text-anchor="middle" font-family="Helvetica">to 0xF000_FFFF</text>
+<text x="290" y="203" fill="#6b7280" font-size="8" text-anchor="middle" font-family="Helvetica">APB bridge</text>
+<line x1="210" y1="218" x2="370" y2="218" stroke="#4a9eff" stroke-width="0.5" stroke-dasharray="3,2"/>
+<text x="290" y="238" fill="#7bc142" font-size="9" text-anchor="middle" font-family="Helvetica">S2: 0xF001_0000</text>
+<text x="290" y="252" fill="#7bc142" font-size="9" text-anchor="middle" font-family="Helvetica">to 0xF001_FFFF</text>
+<text x="290" y="266" fill="#6b7280" font-size="8" text-anchor="middle" font-family="Helvetica">SoC cfg regs</text>
+
+<!-- Arrows from masters -->
+<line x1="140" y1="85" x2="198" y2="120" stroke="#4a9eff" stroke-width="1.5" marker-end="url(#xa)"/>
+<line x1="140" y1="165" x2="198" y2="180" stroke="#c084fc" stroke-width="1.5" marker-end="url(#xa)"/>
+
+<!-- Slave S0 --> 
+<line x1="380" y1="125" x2="460" y2="110" stroke="#4a9eff" stroke-width="2" marker-end="url(#xa)"/>
+<rect x="461" y="82" width="160" height="56" rx="6" fill="#1a3a5c" stroke="#4a9eff" stroke-width="1.5"/>
+<text x="541" y="104" fill="#cdd6f4" font-size="10" text-anchor="middle" font-family="Helvetica" font-weight="bold">NoC entry (0,0)</text>
+<text x="541" y="118" fill="#89b4fa" font-size="8" text-anchor="middle" font-family="Helvetica">ni_00 AXI slave</text>
+<text x="541" y="130" fill="#6b7280" font-size="8" text-anchor="middle" font-family="Helvetica">XY-routed to all nodes</text>
+
+<!-- Slave S1 --> 
+<line x1="380" y1="185" x2="460" y2="200" stroke="#f38ba8" stroke-width="2" marker-end="url(#xr)"/>
+<rect x="461" y="173" width="160" height="56" rx="6" fill="#2d1a1a" stroke="#f38ba8" stroke-width="1.5"/>
+<text x="541" y="194" fill="#cdd6f4" font-size="10" text-anchor="middle" font-family="Helvetica" font-weight="bold">APB cluster</text>
+<text x="541" y="208" fill="#f38ba8" font-size="8" text-anchor="middle" font-family="Helvetica">AHB bridge -&gt; APB fabric</text>
+<text x="541" y="220" fill="#6b7280" font-size="8" text-anchor="middle" font-family="Helvetica">UART / GPIO / Timer / WDT</text>
+
+<!-- Slave S2 --> 
+<line x1="380" y1="248" x2="460" y2="280" stroke="#7bc142" stroke-width="2" marker-end="url(#xg)"/>
+<rect x="461" y="252" width="160" height="56" rx="6" fill="#1a2e1a" stroke="#7bc142" stroke-width="1.5"/>
+<text x="541" y="274" fill="#cdd6f4" font-size="10" text-anchor="middle" font-family="Helvetica" font-weight="bold">SoC cfg registers</text>
+<text x="541" y="288" fill="#a6e3a1" font-size="8" text-anchor="middle" font-family="Helvetica">mailbox push / perf read</text>
+<text x="541" y="300" fill="#6b7280" font-size="8" text-anchor="middle" font-family="Helvetica">16 x 32-bit at 0xF001_xxxx</text>
+
+<!-- APB detail chain -->
+<rect x="640" y="173" width="240" height="170" rx="6" fill="#f0fdf4" stroke="#7bc142" stroke-width="1"/>
+<text x="760" y="196" fill="#14532d" font-size="10" text-anchor="middle" font-family="Helvetica" font-weight="bold">APB cluster detail</text>
+<text x="648" y="216" fill="#374151" font-size="9" font-family="Helvetica">AXI S1 -&gt; ahb_to_apb_bridge</text>
+<text x="648" y="232" fill="#374151" font-size="9" font-family="Helvetica">        -&gt; apb_fabric (5 slots)</text>
+<text x="660" y="250" fill="#374151" font-size="9" font-family="Helvetica">slot 0: apb_uart</text>
+<text x="660" y="265" fill="#374151" font-size="9" font-family="Helvetica">slot 1: apb_gpio0</text>
+<text x="660" y="280" fill="#374151" font-size="9" font-family="Helvetica">slot 2: apb_gpio1</text>
+<text x="660" y="295" fill="#374151" font-size="9" font-family="Helvetica">slot 3: apb_timer0</text>
+<text x="660" y="310" fill="#374151" font-size="9" font-family="Helvetica">slot 4: apb_watchdog</text>
+<text x="648" y="332" fill="#2a7a1a" font-size="9" font-family="Helvetica">irq outputs -&gt; irq_periph aggregator</text>
+<line x1="621" y1="200" x2="639" y2="200" stroke="#7bc142" stroke-width="1.5" marker-end="url(#xg)"/>
+</svg>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- SECTION 04: Reset Synchronizer                                -->
+  <!-- ============================================================ -->
+  <div class="sec" id="reset-sync">
+    <div class="sh"><span class="sn">04</span><h2>Reset Synchronizer</h2><span class="st tr">FF sync chain</span></div>
+    <div class="co">Generates <strong>sys_rst_n</strong>: asserts asynchronously when por_n goes low, deasserts synchronously after passing through the FF chain. Count the FF boxes to determine the synchronizer depth.</div>
+    <div class="dc"><svg style="max-width:100%;height:auto;background:#fff;border-radius:6px;" width="820" height="130" viewBox="0 0 820 130" xmlns="http://www.w3.org/2000/svg">
+<defs><marker id="rsa" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#7bc142"/></marker>
+<marker id="rsb" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#4a9eff"/></marker></defs>
+<rect x="8" y="36" width="80" height="48" rx="6" fill="#1a2e1a" stroke="#7bc142" stroke-width="1.5"/>
+<text x="48" y="56" fill="#cdd6f4" font-size="10" text-anchor="middle" font-family="Helvetica">por_n</text>
+<text x="48" y="70" fill="#a6e3a1" font-size="8" text-anchor="middle" font-family="Helvetica">async assert</text>
+<line x1="88" y1="60" x2="116" y2="60" stroke="#7bc142" stroke-width="1.5" marker-end="url(#rsa)"/>
+<rect x="117" y="36" width="88" height="48" rx="6" fill="#1e2d4a" stroke="#4a9eff" stroke-width="1.5"/>
+<text x="161" y="56" fill="#cdd6f4" font-size="12" font-weight="bold" text-anchor="middle" font-family="Helvetica">FF1</text>
+<text x="161" y="70" fill="#89b4fa" font-size="8" text-anchor="middle" font-family="Helvetica">posedge clk</text>
+<line x1="205" y1="60" x2="233" y2="60" stroke="#4a9eff" stroke-width="1.5" marker-end="url(#rsb)"/>
+<rect x="234" y="36" width="88" height="48" rx="6" fill="#1e2d4a" stroke="#4a9eff" stroke-width="1.5"/>
+<text x="278" y="56" fill="#cdd6f4" font-size="12" font-weight="bold" text-anchor="middle" font-family="Helvetica">FF2</text>
+<text x="278" y="70" fill="#89b4fa" font-size="8" text-anchor="middle" font-family="Helvetica">posedge clk</text>
+<line x1="322" y1="60" x2="350" y2="60" stroke="#4a9eff" stroke-width="1.5" marker-end="url(#rsb)"/>
+<rect x="351" y="36" width="88" height="48" rx="6" fill="#1e2d4a" stroke="#4a9eff" stroke-width="1.5"/>
+<text x="395" y="56" fill="#cdd6f4" font-size="12" font-weight="bold" text-anchor="middle" font-family="Helvetica">FF3</text>
+<text x="395" y="70" fill="#89b4fa" font-size="8" text-anchor="middle" font-family="Helvetica">posedge clk</text>
+<line x1="439" y1="60" x2="467" y2="60" stroke="#4a9eff" stroke-width="1.5" marker-end="url(#rsb)"/>
+<rect x="468" y="36" width="88" height="48" rx="6" fill="#1e2d4a" stroke="#4a9eff" stroke-width="1.5"/>
+<text x="512" y="56" fill="#cdd6f4" font-size="12" font-weight="bold" text-anchor="middle" font-family="Helvetica">FF4</text>
+<text x="512" y="70" fill="#89b4fa" font-size="8" text-anchor="middle" font-family="Helvetica">posedge clk</text>
+<line x1="556" y1="60" x2="584" y2="60" stroke="#4a9eff" stroke-width="1.5" marker-end="url(#rsb)"/>
+<rect x="585" y="36" width="100" height="48" rx="6" fill="#1a2e1a" stroke="#7bc142" stroke-width="1.5"/>
+<text x="635" y="56" fill="#cdd6f4" font-size="10" text-anchor="middle" font-family="Helvetica">sys_rst_n</text>
+<text x="635" y="70" fill="#a6e3a1" font-size="8" text-anchor="middle" font-family="Helvetica">sync deassert</text>
+<text x="410" y="112" fill="#6b7280" font-size="10" text-anchor="middle" font-family="Helvetica">Depth = number of FF boxes drawn above. Determine from the diagram.</text>
+</svg></div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- SECTION 05: TileLink Router                                   -->
+  <!-- ============================================================ -->
+  <div class="sec" id="tl-router">
+    <div class="sh"><span class="sn">05</span><h2>TileLink-UL Router</h2><span class="st tc">XY routing -- 5 ports</span></div>
+    <div class="co">Each router exposes <strong>5 ports</strong>: p0=North, p1=South, p2=East, p3=West, and a Local inject port (p4, connects to its node's NI or DMA engine). Routing is XY-first. Address bits <strong>[31:28]=dest_x</strong>, <strong>[27:24]=dest_y</strong>. Determine port count and bus widths from the interface shown. The inject port exists on all nodes; for DMA-inject nodes (0,1) and (0,2) the DMA master drives this port directly. For all other nodes the NI drives it.<br/><strong>D-channel limitation:</strong> D-channel responses (read data / write ack) are returned only to the <em>local inject port</em> of the node where the transaction was accepted. D-channel packets do not propagate back across multiple hops. As a consequence, AXI reads issued to remote nodes will never return rvalid to the CPU. All NoC routing verification in the testbench therefore uses direct SRAM hierarchy probes (<code>dut.u_sram_XY.mem[]</code>) rather than AXI read-back.</div>
+    <div class="dc"><svg style="max-width:100%;height:auto;background:#fff;border-radius:6px;" width="820" height="280" viewBox="0 0 820 280" xmlns="http://www.w3.org/2000/svg">
+<defs><marker id="rta" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto-start-reverse"><polygon points="0 0,8 3,0 6" fill="#4a9eff"/></marker>
+<marker id="rtb" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto-start-reverse"><polygon points="0 0,8 3,0 6" fill="#f59e0b"/></marker></defs>
+<rect x="280" y="90" width="260" height="100" rx="8" fill="#1e2d4a" stroke="#4a9eff" stroke-width="2"/>
+<text x="410" y="118" fill="#cdd6f4" font-size="13" font-weight="bold" text-anchor="middle" font-family="Helvetica">tilelink_router</text>
+<text x="410" y="136" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="Helvetica">XY routing: addr[31:28]=dest_x  addr[27:24]=dest_y</text>
+<text x="410" y="152" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="Helvetica">A-channel in / D-channel out per port</text>
+<text x="410" y="166" fill="#6b7280" font-size="8" text-anchor="middle" font-family="Helvetica">forwarding: p0 North | p1 South | p2 East | p3 West | inject</text>
+<!-- p0 North -->
+<line x1="410" y1="90" x2="410" y2="38" stroke="#4a9eff" stroke-width="2" marker-start="url(#rta)" marker-end="url(#rta)"/>
+<text x="410" y="28" fill="#1a1d2e" font-size="10" text-anchor="middle" font-family="Helvetica" font-weight="bold">p0 North</text>
+<!-- p1 South -->
+<line x1="410" y1="190" x2="410" y2="242" stroke="#4a9eff" stroke-width="2" marker-start="url(#rta)" marker-end="url(#rta)"/>
+<text x="410" y="258" fill="#1a1d2e" font-size="10" text-anchor="middle" font-family="Helvetica" font-weight="bold">p1 South</text>
+<!-- p2 East -->
+<line x1="540" y1="128" x2="640" y2="128" stroke="#4a9eff" stroke-width="2" marker-start="url(#rta)" marker-end="url(#rta)"/>
+<text x="706" y="126" fill="#1a1d2e" font-size="10" text-anchor="start" font-family="Helvetica" font-weight="bold">p2 East</text>
+<!-- p3 West -->
+<line x1="280" y1="128" x2="180" y2="128" stroke="#4a9eff" stroke-width="2" marker-start="url(#rta)" marker-end="url(#rta)"/>
+<text x="114" y="126" fill="#1a1d2e" font-size="10" text-anchor="end" font-family="Helvetica" font-weight="bold">p3 West</text>
+<!-- inject port -->
+<line x1="540" y1="162" x2="640" y2="172" stroke="#f59e0b" stroke-width="2" marker-end="url(#rtb)"/>
+<text x="648" y="170" fill="#b45309" font-size="10" text-anchor="start" font-family="Helvetica" font-weight="bold">inject (from NI or DMA)</text>
+</svg></div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- SECTION 06: TileLink NI                                       -->
+  <!-- ============================================================ -->
+  <div class="sec" id="tl-ni">
+    <div class="sh"><span class="sn">06</span><h2>TileLink NI &mdash; AXI4-Lite to TL-UL Bridge</h2><span class="st tc">bridge</span></div>
+    <div class="co">One NI per node. The NI is an <strong>AXI4-Lite slave</strong> on one side and a <strong>TL-UL master</strong> on the other. AXI and TL-UL bus widths match; determine them from the signals shown. The NI's TL-A output connects to the router's inject port.</div>
+    <div class="dc"><svg style="max-width:100%;height:auto;background:#fff;border-radius:6px;" width="820" height="170" viewBox="0 0 820 170" xmlns="http://www.w3.org/2000/svg">
+<defs><marker id="nia" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto-start-reverse"><polygon points="0 0,8 3,0 6" fill="#4a9eff"/></marker>
+<marker id="nib" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto-start-reverse"><polygon points="0 0,8 3,0 6" fill="#7bc142"/></marker></defs>
+<rect x="20" y="30" width="170" height="110" rx="6" fill="#1a3a5c" stroke="#4a9eff" stroke-width="1.5"/>
+<text x="105" y="58" fill="#cdd6f4" font-size="11" font-weight="bold" text-anchor="middle" font-family="Helvetica">AXI4-Lite Master</text>
+<text x="105" y="74" fill="#89b4fa" font-size="9" text-anchor="middle" font-family="Helvetica">awaddr / araddr</text>
+<text x="105" y="88" fill="#89b4fa" font-size="9" text-anchor="middle" font-family="Helvetica">wdata / rdata / wstrb</text>
+<text x="105" y="102" fill="#89b4fa" font-size="9" text-anchor="middle" font-family="Helvetica">bvalid / rvalid</text>
+<rect x="280" y="20" width="260" height="130" rx="8" fill="#2d1a3e" stroke="#c084fc" stroke-width="2"/>
+<text x="410" y="50" fill="#cdd6f4" font-size="13" font-weight="bold" text-anchor="middle" font-family="Helvetica">tilelink_ni</text>
+<text x="410" y="70" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="Helvetica">AXI slave in  --&gt;  TL-A master out</text>
+<text x="410" y="86" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="Helvetica">TL-D slave in  --&gt;  AXI resp out</text>
+<text x="410" y="104" fill="#6b7280" font-size="8" text-anchor="middle" font-family="Helvetica">state machine: IDLE -&gt; SEND_A -&gt; WAIT_D -&gt; IDLE</text>
+<rect x="620" y="30" width="180" height="110" rx="6" fill="#1a2e1a" stroke="#7bc142" stroke-width="1.5"/>
+<text x="710" y="58" fill="#cdd6f4" font-size="11" font-weight="bold" text-anchor="middle" font-family="Helvetica">TL-UL Channels</text>
+<text x="710" y="74" fill="#a6e3a1" font-size="9" text-anchor="middle" font-family="Helvetica">tl_a_data / tl_a_addr</text>
+<text x="710" y="88" fill="#a6e3a1" font-size="9" text-anchor="middle" font-family="Helvetica">tl_a_mask / tl_a_valid</text>
+<text x="710" y="102" fill="#a6e3a1" font-size="9" text-anchor="middle" font-family="Helvetica">tl_d_data / tl_d_valid</text>
+<line x1="190" y1="85" x2="278" y2="85" stroke="#4a9eff" stroke-width="2" marker-start="url(#nia)" marker-end="url(#nia)"/>
+<line x1="540" y1="85" x2="618" y2="85" stroke="#7bc142" stroke-width="2" marker-start="url(#nib)" marker-end="url(#nib)"/>
+</svg></div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- SECTION 07: AXI-Lite SRAM                                     -->
+  <!-- ============================================================ -->
+  <div class="sec" id="axi-sram">
+    <div class="sh"><span class="sn">07</span><h2>AXI-Lite SRAM</h2><span class="st tg">memory slave</span></div>
+    <div class="co">One AXI4-Lite SRAM per node. The router drives its AXI ports directly (no NI on the local path). Determine depth, data width, and address width from the interface shown and the address map. The address bus is sized to address every word of the memory.<br/><strong>Width note:</strong> The SRAM data width is 64 bits (wstrb[7:0]). The CPU AXI master uses a 32-bit data bus (cpu_wstrb[3:0]); the Network Interface translates this to a 64-bit SRAM write by zero-extending wstrb and placing the 32-bit data in the correct half-word lane of the 64-bit word.</div>
+    <div class="dc"><svg style="max-width:100%;height:auto;background:#fff;border-radius:6px;" width="800" height="200" viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <marker id="swa" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#1d6ed8"/></marker>
+  <marker id="sra2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#2a7a1a"/></marker>
+</defs>
+<!-- SRAM block -->
+<rect x="370" y="30" width="260" height="140" rx="8" fill="#1a2e1a" stroke="#7bc142" stroke-width="2"/>
+<text x="500" y="64" fill="#cdd6f4" font-size="14" font-weight="bold" text-anchor="middle" font-family="Helvetica">axi_lite_sram</text>
+<text x="500" y="86" fill="#94a3b8" font-size="10" text-anchor="middle" font-family="Helvetica">AXI4-Lite slave -- local node memory</text>
+<text x="500" y="104" fill="#6b7280" font-size="9" text-anchor="middle" font-family="Helvetica">router drives awaddr / wdata / araddr directly</text>
+<text x="500" y="120" fill="#6b7280" font-size="9" text-anchor="middle" font-family="Helvetica">data_width=64  depth=4096  addr_bits=12</text>
+<text x="500" y="140" fill="#a6e3a1" font-size="9" text-anchor="middle" font-family="Helvetica">wstrb[7:0]  (byte-enable per 64-bit word)</text>
+<!-- Write channels: aw/w/wstrb (arrow from left into block) -->
+<line x1="18" y1="75" x2="368" y2="75" stroke="#1d6ed8" stroke-width="2" marker-end="url(#swa)"/>
+<text x="22" y="68" fill="#1d6ed8" font-size="11" font-family="Helvetica" font-weight="bold">aw</text>
+<text x="22" y="83" fill="#1d6ed8" font-size="9" font-family="Helvetica">awaddr[31:0]  awvalid  awready</text>
+<!-- W channel -->
+<line x1="18" y1="112" x2="368" y2="112" stroke="#1d6ed8" stroke-width="2" marker-end="url(#swa)"/>
+<text x="22" y="105" fill="#1d6ed8" font-size="11" font-family="Helvetica" font-weight="bold">w / wstrb</text>
+<text x="22" y="120" fill="#1d6ed8" font-size="9" font-family="Helvetica">wdata[63:0]  wstrb[7:0]  wvalid  wready</text>
+<!-- AR channel -->
+<line x1="18" y1="148" x2="368" y2="148" stroke="#1d6ed8" stroke-width="2" marker-end="url(#swa)"/>
+<text x="22" y="141" fill="#1d6ed8" font-size="11" font-family="Helvetica" font-weight="bold">ar</text>
+<text x="22" y="156" fill="#1d6ed8" font-size="9" font-family="Helvetica">araddr[31:0]  arvalid  arready</text>
+<!-- R+B response channels (arrow going left back to router) -->
+<line x1="368" y1="170" x2="18" y2="170" stroke="#2a7a1a" stroke-width="2" marker-end="url(#sra2)"/>
+<text x="22" y="186" fill="#2a7a1a" font-size="10" font-family="Helvetica">r (rdata[63:0]  rvalid  rready)  /  b (bvalid  bready)</text>
+</svg></div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- SECTION 08: AES-128 Engines                                   -->
+  <!-- ============================================================ -->
+  <div class="sec" id="aes-engine">
+    <div class="sh"><span class="sn">08</span><h2>AES-128 Engines</h2><span class="st tp">aes0@(3,0) &nbsp; aes1@(3,1) &nbsp; aes2@(2,0) &nbsp; aes3@(2,1)</span></div>
+    <div class="co">Four AES-128 engines, all using <code>ip_type: aes128</code>. Each takes a 128-bit key and 128-bit plaintext, outputs 128-bit ciphertext. The <strong>done</strong> output is a single-cycle pulse after 10 rounds; <strong>busy</strong> is high during computation. Done signals feed the <code>irq_crypto</code> aggregator as src[0..3].</div>
+    <div class="dc"><svg style="max-width:100%;height:auto;background:#fff;border-radius:6px;" width="820" height="190" viewBox="0 0 820 190" xmlns="http://www.w3.org/2000/svg">
+<rect x="8"   y="20" width="190" height="150" rx="6" fill="#3d1a1a" stroke="#f38ba8" stroke-width="2"/>
+<text x="103" y="46" fill="#f38ba8" font-size="11" font-weight="bold" text-anchor="middle" font-family="Helvetica">aes0 @ (3,0)</text>
+<text x="103" y="62" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="Helvetica">ip_type: aes128  name: aes0</text>
+<text x="103" y="78" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="Helvetica">key_in[127:0]  key_valid</text>
+<text x="103" y="92" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="Helvetica">data_in[127:0]  start  encrypt</text>
+<text x="103" y="110" fill="#a6e3a1" font-size="8" text-anchor="middle" font-family="Helvetica">data_out[127:0]</text>
+<text x="103" y="124" fill="#a6e3a1" font-size="8" text-anchor="middle" font-family="Helvetica">done (1-cycle pulse, 10 rounds)</text>
+<text x="103" y="138" fill="#a6e3a1" font-size="8" text-anchor="middle" font-family="Helvetica">busy</text>
+<text x="103" y="156" fill="#f38ba8" font-size="8" text-anchor="middle" font-family="Helvetica">done -&gt; irq_crypto src[0]</text>
+
+<rect x="213" y="20" width="190" height="150" rx="6" fill="#3d1a1a" stroke="#f38ba8" stroke-width="2"/>
+<text x="308" y="46" fill="#f38ba8" font-size="11" font-weight="bold" text-anchor="middle" font-family="Helvetica">aes1 @ (3,1)</text>
+<text x="308" y="62" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="Helvetica">ip_type: aes128  name: aes1</text>
+<text x="308" y="78" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="Helvetica">key_in[127:0]  key_valid</text>
+<text x="308" y="92" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="Helvetica">data_in[127:0]  start  encrypt</text>
+<text x="308" y="110" fill="#a6e3a1" font-size="8" text-anchor="middle" font-family="Helvetica">data_out[127:0]</text>
+<text x="308" y="124" fill="#a6e3a1" font-size="8" text-anchor="middle" font-family="Helvetica">done (1-cycle pulse)</text>
+<text x="308" y="138" fill="#a6e3a1" font-size="8" text-anchor="middle" font-family="Helvetica">busy</text>
+<text x="308" y="156" fill="#f38ba8" font-size="8" text-anchor="middle" font-family="Helvetica">done -&gt; irq_crypto src[1]</text>
+
+<rect x="418" y="20" width="190" height="150" rx="6" fill="#3d1a1a" stroke="#f38ba8" stroke-width="2"/>
+<text x="513" y="46" fill="#f38ba8" font-size="11" font-weight="bold" text-anchor="middle" font-family="Helvetica">aes2 @ (2,0)</text>
+<text x="513" y="62" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="Helvetica">ip_type: aes128  name: aes2</text>
+<text x="513" y="78" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="Helvetica">key_in[127:0]  key_valid</text>
+<text x="513" y="92" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="Helvetica">data_in[127:0]  start  encrypt</text>
+<text x="513" y="110" fill="#a6e3a1" font-size="8" text-anchor="middle" font-family="Helvetica">data_out[127:0]</text>
+<text x="513" y="124" fill="#a6e3a1" font-size="8" text-anchor="middle" font-family="Helvetica">done (1-cycle pulse)</text>
+<text x="513" y="138" fill="#a6e3a1" font-size="8" text-anchor="middle" font-family="Helvetica">busy</text>
+<text x="513" y="156" fill="#f38ba8" font-size="8" text-anchor="middle" font-family="Helvetica">done -&gt; irq_crypto src[2]</text>
+
+<rect x="623" y="20" width="190" height="150" rx="6" fill="#3d1a1a" stroke="#f38ba8" stroke-width="2"/>
+<text x="718" y="46" fill="#f38ba8" font-size="11" font-weight="bold" text-anchor="middle" font-family="Helvetica">aes3 @ (2,1)</text>
+<text x="718" y="62" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="Helvetica">ip_type: aes128  name: aes3</text>
+<text x="718" y="78" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="Helvetica">key_in[127:0]  key_valid</text>
+<text x="718" y="92" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="Helvetica">data_in[127:0]  start  encrypt</text>
+<text x="718" y="110" fill="#a6e3a1" font-size="8" text-anchor="middle" font-family="Helvetica">data_out[127:0]</text>
+<text x="718" y="124" fill="#a6e3a1" font-size="8" text-anchor="middle" font-family="Helvetica">done (1-cycle pulse)</text>
+<text x="718" y="138" fill="#a6e3a1" font-size="8" text-anchor="middle" font-family="Helvetica">busy</text>
+<text x="718" y="156" fill="#f38ba8" font-size="8" text-anchor="middle" font-family="Helvetica">done -&gt; irq_crypto src[3]</text>
+</svg></div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- SECTION 09: DMA Engine                                        -->
+  <!-- ============================================================ -->
+  <div class="sec" id="dma-engine">
+    <div class="sh"><span class="sn">09</span><h2>DMA Engine</h2><span class="st ti">memory-to-memory  &mdash;  dma0 injects at (0,1), dma1 injects at (0,2)</span></div>
+    <div class="co">Two DMA engines. Each has an <strong>AXI4-Lite config slave</strong> (CPU programs the transfer via SRC_ADDR / DST_ADDR / LENGTH / CTRL registers) and an <strong>AXI4-Lite master</strong> port (performs the actual read-then-write transfer). The DMA master port connects to the router inject port at its assigned node. <code>dma0_irq</code> feeds irq_crypto src[4], <code>dma1_irq</code> feeds src[5].<br/><strong>Required internal register names (probed by testbench):</strong> the FSM state register must be named <code>dma_st</code> (3-bit; value 0 = idle) and the STATUS/IRQSTAT combined 32-bit register must be named <code>r_stat</code> (bit 0 = busy, bit 1 = done).</div>
+    <div class="dc"><svg style="max-width:100%;height:auto;background:#fff;border-radius:6px;" width="880" height="280" viewBox="0 0 880 280" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <marker id="dma" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#f59e0b"/></marker>
+  <marker id="dmr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#94a3b8"/></marker>
+</defs>
+
+<!-- ---- ROW 1: dma0 ---- -->
+<!-- CPU cfg label -->
+<text x="14" y="80" fill="#b45309" font-size="10" font-family="Helvetica" font-weight="bold">CPU</text>
+<text x="14" y="94" fill="#b45309" font-size="9" font-family="Helvetica">cfg slave</text>
+<text x="14" y="107" fill="#b45309" font-size="8" font-family="Helvetica">(AXI4-Lite)</text>
+<line x1="70" y1="90" x2="118" y2="90" stroke="#f59e0b" stroke-width="2" marker-end="url(#dma)"/>
+
+<!-- dma0 box -->
+<rect x="120" y="40" width="520" height="110" rx="8" fill="#3d2b00" stroke="#f59e0b" stroke-width="2"/>
+<text x="380" y="66" fill="#fcd34d" font-size="12" font-weight="bold" text-anchor="middle" font-family="Helvetica">dma0  (injects at node 0,1)</text>
+<text x="380" y="84" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="Helvetica">Regs: SRC_ADDR  DST_ADDR  LENGTH  CTRL  STATUS  IRQSTAT</text>
+<text x="380" y="100" fill="#fcd34d" font-size="9" text-anchor="middle" font-family="Helvetica">CTRL[0]=start  CTRL[1]=irq_en  |  STATUS[0]=busy  STATUS[1]=done</text>
+<text x="380" y="116" fill="#a6e3a1" font-size="9" text-anchor="middle" font-family="Helvetica">master: reads src, writes dst word-by-word; dma_irq when done and irq_en</text>
+<text x="380" y="134" fill="#6b7280" font-size="8" text-anchor="middle" font-family="Helvetica">dma0_irq -&gt; irq_crypto src[4]</text>
+
+<!-- dma0 -> NoC inject arrow -->
+<line x1="640" y1="90" x2="740" y2="90" stroke="#f59e0b" stroke-width="2" marker-end="url(#dma)"/>
+<text x="744" y="82" fill="#b45309" font-size="10" font-family="Helvetica" font-weight="bold">AXI master</text>
+<text x="744" y="96" fill="#b45309" font-size="9" font-family="Helvetica">-&gt; router_01</text>
+<text x="744" y="109" fill="#b45309" font-size="8" font-family="Helvetica">inject (0,1)</text>
+
+<!-- ---- ROW 2: dma1 ---- -->
+<text x="14" y="198" fill="#b45309" font-size="10" font-family="Helvetica" font-weight="bold">CPU</text>
+<text x="14" y="212" fill="#b45309" font-size="9" font-family="Helvetica">cfg slave</text>
+<text x="14" y="225" fill="#b45309" font-size="8" font-family="Helvetica">(AXI4-Lite)</text>
+<line x1="70" y1="208" stroke="#f59e0b" x2="118" y2="208" stroke-width="2" marker-end="url(#dma)"/>
+
+<!-- dma1 box -->
+<rect x="120" y="158" width="520" height="110" rx="8" fill="#3d2b00" stroke="#f59e0b" stroke-width="2"/>
+<text x="380" y="184" fill="#fcd34d" font-size="12" font-weight="bold" text-anchor="middle" font-family="Helvetica">dma1  (injects at node 0,2)</text>
+<text x="380" y="202" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="Helvetica">Regs: SRC_ADDR  DST_ADDR  LENGTH  CTRL  STATUS  IRQSTAT</text>
+<text x="380" y="218" fill="#fcd34d" font-size="9" text-anchor="middle" font-family="Helvetica">CTRL[0]=start  CTRL[1]=irq_en  |  STATUS[0]=busy  STATUS[1]=done</text>
+<text x="380" y="234" fill="#a6e3a1" font-size="9" text-anchor="middle" font-family="Helvetica">master: reads src, writes dst word-by-word; dma_irq when done and irq_en</text>
+<text x="380" y="252" fill="#6b7280" font-size="8" text-anchor="middle" font-family="Helvetica">dma1_irq -&gt; irq_crypto src[5]</text>
+
+<!-- dma1 -> NoC inject arrow -->
+<line x1="640" y1="208" x2="740" y2="208" stroke="#f59e0b" stroke-width="2" marker-end="url(#dma)"/>
+<text x="744" y="200" fill="#b45309" font-size="10" font-family="Helvetica" font-weight="bold">AXI master</text>
+<text x="744" y="214" fill="#b45309" font-size="9" font-family="Helvetica">-&gt; router_02</text>
+<text x="744" y="227" fill="#b45309" font-size="8" font-family="Helvetica">inject (0,2)</text>
+</svg></div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- SECTION 10: IRQ Aggregators                                   -->
+  <!-- ============================================================ -->
+  <div class="sec" id="irq-agg">
+    <div class="sh"><span class="sn">10</span><h2>IRQ Aggregators</h2><span class="st tc">dual 8-source aggregators</span></div>
+    <div class="co">Two independent 8-source IRQ aggregators. Each outputs <code>cpu_irq</code> (level) and <code>cpu_irq_id[2:0]</code> (lowest active source ID). Unused sources are tied to 0. The aggregator is an APB slave -- its registers are accessible for polarity / mask configuration.</div>
+    <div class="dc"><svg style="max-width:100%;height:auto;background:#fff;border-radius:6px;" width="820" height="200" viewBox="0 0 820 200" xmlns="http://www.w3.org/2000/svg">
+<defs><marker id="ia" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#c084fc"/></marker>
+<marker id="ib" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#7bc142"/></marker></defs>
+
+<!-- irq_crypto -->
+<rect x="8" y="20" width="295" height="155" rx="6" fill="#2d1a3e" stroke="#c084fc" stroke-width="2"/>
+<text x="155" y="44" fill="#cdd6f4" font-size="11" font-weight="bold" text-anchor="middle" font-family="Helvetica">irq_crypto</text>
+<text x="155" y="62" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="Helvetica">src[0] = aes0_done</text>
+<text x="155" y="76" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="Helvetica">src[1] = aes1_done</text>
+<text x="155" y="90" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="Helvetica">src[2] = aes2_done</text>
+<text x="155" y="104" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="Helvetica">src[3] = aes3_done</text>
+<text x="155" y="118" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="Helvetica">src[4] = dma0_irq</text>
+<text x="155" y="132" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="Helvetica">src[5] = dma1_irq</text>
+<text x="155" y="146" fill="#6b7280" font-size="8" text-anchor="middle" font-family="Helvetica">src[6..7] = 0</text>
+<text x="155" y="162" fill="#a6e3a1" font-size="8" text-anchor="middle" font-family="Helvetica">-&gt; cpu_crypto_irq  cpu_crypto_irq_id[2:0]</text>
+
+<!-- irq_periph -->
+<rect x="315" y="20" width="295" height="155" rx="6" fill="#2d1a3e" stroke="#c084fc" stroke-width="2"/>
+<text x="462" y="44" fill="#cdd6f4" font-size="11" font-weight="bold" text-anchor="middle" font-family="Helvetica">irq_periph</text>
+<text x="462" y="62" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="Helvetica">src[0] = uart_rx_irq</text>
+<text x="462" y="76" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="Helvetica">src[1] = gpio0_irq</text>
+<text x="462" y="90" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="Helvetica">src[2] = gpio1_irq</text>
+<text x="462" y="104" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="Helvetica">src[3] = timer0_irq</text>
+<text x="462" y="118" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="Helvetica">src[4] = wdt_irq</text>
+<text x="462" y="132" fill="#6b7280" font-size="8" text-anchor="middle" font-family="Helvetica">src[5..7] = 0</text>
+<text x="462" y="162" fill="#a6e3a1" font-size="8" text-anchor="middle" font-family="Helvetica">-&gt; cpu_periph_irq  cpu_periph_irq_id[2:0]</text>
+
+<!-- CPU IRQ outputs -->
+<rect x="630" y="60" width="180" height="80" rx="6" fill="#1a2e1a" stroke="#7bc142" stroke-width="1.5"/>
+<text x="720" y="88" fill="#cdd6f4" font-size="10" text-anchor="middle" font-family="Helvetica" font-weight="bold">CPU IRQ inputs</text>
+<text x="720" y="104" fill="#a6e3a1" font-size="8" text-anchor="middle" font-family="Helvetica">cpu_crypto_irq[2:0]</text>
+<text x="720" y="118" fill="#a6e3a1" font-size="8" text-anchor="middle" font-family="Helvetica">cpu_periph_irq[2:0]</text>
+<line x1="303" y1="90"  x2="628" y2="90"  stroke="#7bc142" stroke-width="1.5" marker-end="url(#ib)"/>
+<line x1="610" y1="108" x2="628" y2="108" stroke="#7bc142" stroke-width="1.5" marker-end="url(#ib)"/>
+</svg></div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- SECTION 11: Async Mailbox (CDC)                               -->
+  <!-- ============================================================ -->
+  <div class="sec" id="async-mbox">
+    <div class="sh"><span class="sn">11</span><h2>Async FIFO Mailbox</h2><span class="st tr">CDC -- sys_clk to dsp_clk</span></div>
+    <div class="co">An <code>async_fifo</code> bridges the CPU clock domain (write side) to the DSP clock domain (read side). The CPU pushes words by writing to SoC config register offset 0x00 (MBOX_DATA). The DSP clock domain reads via the <code>mbox_rd_en</code> port of the top module. The <code>mbox_empty</code> flag and <code>mbox_level[3:0]</code> occupancy counter are available on the CPU side via config reg offset 0x04.</div>
+    <div class="dc"><svg style="max-width:100%;height:auto;background:#fff;border-radius:6px;" width="900" height="260" viewBox="0 0 900 260" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <marker id="ca" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#4a9eff"/></marker>
+  <marker id="cb" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#f38ba8"/></marker>
+  <marker id="cg" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#a6e3a1"/></marker>
+</defs>
+
+<!-- CPU Domain box -->
+<rect x="8" y="20" width="230" height="210" rx="8" fill="#1a2d4a" stroke="#4a9eff" stroke-width="2" fill-opacity="0.55"/>
+<text x="123" y="44" fill="#89b4fa" font-size="11" font-weight="bold" text-anchor="middle" font-family="Helvetica">CPU Domain (sys_clk)</text>
+<text x="123" y="64" fill="#cdd6f4" font-size="9.5" text-anchor="middle" font-family="Helvetica">Write: SoC cfg reg 0x00</text>
+<text x="123" y="80" fill="#cdd6f4" font-size="9.5" text-anchor="middle" font-family="Helvetica">(MBOX_DATA write)</text>
+<text x="123" y="100" fill="#89b4fa" font-size="9" text-anchor="middle" font-family="Helvetica">wr_en = cfg_write_hit</text>
+<text x="123" y="116" fill="#89b4fa" font-size="9" text-anchor="middle" font-family="Helvetica">wr_data = cfg_wdata[31:0]</text>
+<text x="123" y="140" fill="#a6e3a1" font-size="9" text-anchor="middle" font-family="Helvetica">full flag back to CPU</text>
+<text x="123" y="156" fill="#a6e3a1" font-size="9" text-anchor="middle" font-family="Helvetica">mbox_level[3:0]</text>
+<text x="123" y="172" fill="#a6e3a1" font-size="9" text-anchor="middle" font-family="Helvetica">readable at cfg 0x04</text>
+
+<!-- Arrow: CPU domain -> FIFO (write side) -->
+<line x1="238" y1="105" x2="298" y2="105" stroke="#4a9eff" stroke-width="2.5" marker-end="url(#ca)"/>
+<text x="268" y="99" fill="#4a9eff" font-size="8" text-anchor="middle" font-family="Helvetica">wr</text>
+<!-- Arrow: FIFO full flag back to CPU -->
+<line x1="300" y1="140" x2="240" y2="140" stroke="#a6e3a1" stroke-width="1.5" marker-end="url(#cg)"/>
+<text x="270" y="135" fill="#a6e3a1" font-size="8" text-anchor="middle" font-family="Helvetica">full</text>
+
+<!-- Async FIFO box (centered, spans CDC boundary) -->
+<rect x="300" y="50" width="200" height="160" rx="8" fill="#2d1a3e" stroke="#c084fc" stroke-width="2.5"/>
+<text x="400" y="80" fill="#cdd6f4" font-size="12" font-weight="bold" text-anchor="middle" font-family="Helvetica">async_fifo_mbox</text>
+<text x="400" y="100" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="Helvetica">data width: 32-bit</text>
+<text x="400" y="116" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="Helvetica">depth: 16 entries</text>
+<text x="400" y="134" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="Helvetica">gray-coded ptr CDC</text>
+<text x="400" y="150" fill="#a6e3a1" font-size="9" text-anchor="middle" font-family="Helvetica">full (wr clock side)</text>
+<text x="400" y="166" fill="#a6e3a1" font-size="9" text-anchor="middle" font-family="Helvetica">empty (rd clock side)</text>
+<text x="400" y="184" fill="#c084fc" font-size="9" text-anchor="middle" font-family="Helvetica">wr_clk=sys_clk  rd_clk=dsp_clk</text>
+
+<!-- CDC boundary dashed line (between FIFO right edge and DSP domain) -->
+<line x1="515" y1="14" x2="515" y2="246" stroke="#fcd34d" stroke-width="2" stroke-dasharray="5,3"/>
+<text x="515" y="11" fill="#fcd34d" font-size="8.5" text-anchor="middle" font-family="Helvetica">CDC boundary</text>
+
+<!-- Arrow: FIFO -> DSP domain (read side) -->
+<line x1="500" y1="105" x2="560" y2="105" stroke="#f38ba8" stroke-width="2.5" marker-end="url(#cb)"/>
+<text x="530" y="99" fill="#f38ba8" font-size="8" text-anchor="middle" font-family="Helvetica">rd</text>
+<!-- Arrow: empty flag from FIFO back labeled -->
+<line x1="562" y1="140" x2="502" y2="140" stroke="#a6e3a1" stroke-width="1.5" marker-end="url(#cg)"/>
+<text x="532" y="135" fill="#a6e3a1" font-size="8" text-anchor="middle" font-family="Helvetica">empty</text>
+
+<!-- DSP Domain box -->
+<rect x="562" y="20" width="225" height="210" rx="8" fill="#2d1a1a" stroke="#f38ba8" stroke-width="2" fill-opacity="0.55"/>
+<text x="674" y="44" fill="#f38ba8" font-size="11" font-weight="bold" text-anchor="middle" font-family="Helvetica">DSP Domain (dsp_clk)</text>
+<text x="674" y="64" fill="#cdd6f4" font-size="9.5" text-anchor="middle" font-family="Helvetica">rd_clk = dsp_clk port</text>
+<text x="674" y="80" fill="#cdd6f4" font-size="9.5" text-anchor="middle" font-family="Helvetica">rd_en = mbox_rd_en port</text>
+<text x="674" y="100" fill="#fca5a5" font-size="9" text-anchor="middle" font-family="Helvetica">dout = mbox_dout[31:0]</text>
+<text x="674" y="116" fill="#fca5a5" font-size="9" text-anchor="middle" font-family="Helvetica">empty = mbox_empty port</text>
+<text x="674" y="140" fill="#6b7280" font-size="8.5" text-anchor="middle" font-family="Helvetica">DSP polls mbox_empty;</text>
+<text x="674" y="156" fill="#6b7280" font-size="8.5" text-anchor="middle" font-family="Helvetica">asserts rd_en for 1 dsp_clk</text>
+
+<!-- CDC Safety note box -->
+<rect x="800" y="20" width="90" height="200" rx="6" fill="#f8f9fc" stroke="#dde1eb" stroke-width="1"/>
+<text x="845" y="40" fill="#1a1d2e" font-size="8.5" font-weight="bold" text-anchor="middle" font-family="Helvetica">CDC Safety</text>
+<text x="806" y="58" fill="#6b7280" font-size="7.5" font-family="Helvetica">Pointers are</text>
+<text x="806" y="71" fill="#6b7280" font-size="7.5" font-family="Helvetica">gray-coded</text>
+<text x="806" y="84" fill="#6b7280" font-size="7.5" font-family="Helvetica">before crossing</text>
+<text x="806" y="100" fill="#6b7280" font-size="7.5" font-family="Helvetica">wr_rst_n and</text>
+<text x="806" y="113" fill="#6b7280" font-size="7.5" font-family="Helvetica">rd_rst_n both</text>
+<text x="806" y="126" fill="#6b7280" font-size="7.5" font-family="Helvetica">= sys_rst_n</text>
+<text x="806" y="142" fill="#6b7280" font-size="7.5" font-family="Helvetica">dsp_clk is</text>
+<text x="806" y="155" fill="#6b7280" font-size="7.5" font-family="Helvetica">independent</text>
+<text x="806" y="168" fill="#6b7280" font-size="7.5" font-family="Helvetica">from testbench</text>
+</svg></div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- SECTION 12: Performance Counter                               -->
+  <!-- ============================================================ -->
+  <div class="sec" id="perf-cnt">
+    <div class="sh"><span class="sn">12</span><h2>Performance Counter</h2><span class="st ti">4 channels x 32-bit</span></div>
+    <div class="co">A <code>perf_counter</code> with 4 event channels, each counting positive edges of its event input. Channels are wired as: <strong>ch[0]</strong> = ni_00 tl_a_valid (NoC transactions from CPU), <strong>ch[1]</strong> = DMA0 IRQ (completed DMA words), <strong>ch[2]</strong> = DMA1 IRQ, <strong>ch[3]</strong> = any AES done (OR of aes0..aes3). Counter values are readable via SoC config registers 0x08..0x14. Enable and clear via register 0x18.</div>
+    <div class="dc"><svg style="max-width:100%;height:auto;background:#fff;border-radius:6px;" width="820" height="130" viewBox="0 0 820 130" xmlns="http://www.w3.org/2000/svg">
+<rect x="210" y="10" width="400" height="110" rx="8" fill="#2d2d1a" stroke="#f59e0b" stroke-width="1.5"/>
+<text x="410" y="36" fill="#fcd34d" font-size="12" font-weight="bold" text-anchor="middle" font-family="Helvetica">perf_counter  (4 channels)</text>
+<text x="410" y="56" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="Helvetica">ch[0]: ni_00 tl_a_valid  (NoC tx count)</text>
+<text x="410" y="72" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="Helvetica">ch[1]: dma0_irq  |  ch[2]: dma1_irq</text>
+<text x="410" y="88" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="Helvetica">ch[3]: aes0_done | aes1_done | aes2_done | aes3_done</text>
+<text x="410" y="106" fill="#a6e3a1" font-size="8" text-anchor="middle" font-family="Helvetica">cnt[0..3][31:0] read via SoC cfg regs 0x08..0x14</text>
+</svg></div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- SECTION 13: Address Map                                       -->
+  <!-- ============================================================ -->
+  <div class="sec" id="addr-map">
+    <div class="sh"><span class="sn">13</span><h2>Address Map</h2><span class="st ti">memory map</span></div>
+    <div class="co">The TileLink router uses the top 8 bits of the 32-bit address for XY routing. The crossbar decodes the top nibble to select NoC, APB, or SoC config space.</div>
+    <div class="dc">
+      <div class="rtl">System Address Map</div>
+      <table><tr><th>Base</th><th>End</th><th>Target</th></tr>
+      <tr><td>0x0000_0000</td><td>0xEFFF_FFFF</td><td>NoC TileLink mesh -- bits[31:28]=dest_x, bits[27:24]=dest_y</td></tr>
+      <tr><td>0xF000_0000</td><td>0xF000_FFFF</td><td>APB peripheral cluster (via AHB bridge)</td></tr>
+      <tr><td>0xF001_0000</td><td>0xF001_FFFF</td><td>SoC config registers (see table below)</td></tr>
+      </table>
+      <div class="rtl" style="margin-top:1rem;">SoC Config Register Map (base 0xF001_0000)</div>
+      <table><tr><th>Offset</th><th>Register</th><th>Function</th></tr>
+      <tr><td>0x00</td><td>MBOX_DATA</td><td>Write: push 32-bit word into async mailbox FIFO</td></tr>
+      <tr><td>0x04</td><td>MBOX_STATUS</td><td>[3:0]=level, [4]=full, [5]=empty (read-only)</td></tr>
+      <tr><td>0x08</td><td>PERF_CNT0</td><td>Counter ch[0] -- read-only</td></tr>
+      <tr><td>0x0C</td><td>PERF_CNT1</td><td>Counter ch[1] -- read-only</td></tr>
+      <tr><td>0x10</td><td>PERF_CNT2</td><td>Counter ch[2] -- read-only</td></tr>
+      <tr><td>0x14</td><td>PERF_CNT3</td><td>Counter ch[3] -- read-only</td></tr>
+      <tr><td>0x18</td><td>PERF_CTRL</td><td>[0]=enable, [1]=clear-all (write 1 to clear)</td></tr>
+      <tr><td>0x1C..0x3C</td><td>reserved</td><td>reads 0</td></tr>
+      </table>
+      <div class="rtl" style="margin-top:1rem;">APB Peripheral Map (base 0xF000_0000, 4KB each)</div>
+      <table><tr><th>Offset</th><th>Peripheral</th></tr>
+      <tr><td>0x000_0000</td><td>apb_uart (slot 0)</td></tr>
+      <tr><td>0x000_1000</td><td>apb_gpio0 (slot 1)</td></tr>
+      <tr><td>0x000_2000</td><td>apb_gpio1 (slot 2)</td></tr>
+      <tr><td>0x000_3000</td><td>apb_timer0 (slot 3)</td></tr>
+      <tr><td>0x000_4000</td><td>apb_watchdog (slot 4)</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- SECTION 14: Naming Contract                                   -->
+  <!-- ============================================================ -->
+  <div class="sec" id="impl-contract">
+    <div class="sh"><span class="sn">14</span><h2>Naming Contract</h2><span class="st ti">required by testbench</span></div>
+    <div class="co">The testbench probes internal hierarchy by instance name. Your top module must use the names below exactly. Parameter values are yours to infer from the diagrams.</div>
+    <div class="dc">
+      <div class="rtl">Required Instance Names</div>
+      <table><tr><th>Block</th><th>Required name</th></tr>
+      <tr><td>reset_sync</td><td><code>u_rst</code></td></tr>
+      <tr><td>axi_lite_crossbar</td><td><code>u_xbar</code></td></tr>
+      <tr><td>ahb_to_apb_bridge</td><td><code>u_bridge</code></td></tr>
+      <tr><td>apb_fabric</td><td><code>u_apb_fab</code></td></tr>
+      <tr><td>apb_uart</td><td><code>u_uart</code></td></tr>
+      <tr><td>apb_gpio (gpio0)</td><td><code>u_gpio0</code></td></tr>
+      <tr><td>apb_gpio (gpio1)</td><td><code>u_gpio1</code></td></tr>
+      <tr><td>apb_timer</td><td><code>u_timer0</code></td></tr>
+      <tr><td>apb_watchdog</td><td><code>u_wdt</code></td></tr>
+      <tr><td>tilelink_router at (x,y)</td><td><code>u_router_XY</code> e.g. <code>u_router_00</code>, <code>u_router_32</code></td></tr>
+      <tr><td>tilelink_ni at (x,y)</td><td><code>u_ni_XY</code></td></tr>
+      <tr><td>axi_lite_sram at (x,y)</td><td><code>u_sram_XY</code></td></tr>
+      <tr><td>aes128 at (3,0)</td><td><code>u_aes0</code></td></tr>
+      <tr><td>aes128 at (3,1)</td><td><code>u_aes1</code></td></tr>
+      <tr><td>aes128 at (2,0)</td><td><code>u_aes2</code></td></tr>
+      <tr><td>aes128 at (2,1)</td><td><code>u_aes3</code></td></tr>
+      <tr><td>dma_engine (ch0)</td><td><code>u_dma0</code></td></tr>
+      <tr><td>dma_engine (ch1)</td><td><code>u_dma1</code></td></tr>
+      <tr><td>irq_aggregator (crypto)</td><td><code>u_irq_crypto</code></td></tr>
+      <tr><td>irq_aggregator (periph)</td><td><code>u_irq_periph</code></td></tr>
+      <tr><td>async_fifo (mailbox)</td><td><code>u_mbox</code></td></tr>
+      <tr><td>perf_counter</td><td><code>u_perf</code></td></tr>
+      </table>
+      <div class="rtl" style="margin-top:1rem;">Required Internal Wire Names</div>
+      <table><tr><th>Wire</th><th>Purpose</th></tr>
+      <tr><td><code>irq_crypto_src</code></td><td>8-bit bus carrying crypto IRQ sources into u_irq_crypto</td></tr>
+      <tr><td><code>irq_periph_src</code></td><td>8-bit bus carrying periph IRQ sources into u_irq_periph</td></tr>
+      <tr><td><code>mbox_wr_en</code></td><td>write-enable from SoC config reg into async mailbox</td></tr>
+      <tr><td><code>mbox_wr_data</code></td><td>32-bit data written to mailbox</td></tr>
+      <tr><td><code>dma0_irq_w</code></td><td>level IRQ from dma0 to irq_crypto_src[4] -- probed by testbench</td></tr>
+      <tr><td><code>dma1_irq_w</code></td><td>level IRQ from dma1 to irq_crypto_src[5] -- probed by testbench</td></tr>
+      <tr><td><code>uart_rx_irq</code></td><td>UART RX interrupt to irq_periph_src[0] -- probed by testbench</td></tr>
+      <tr><td><code>gpio0_irq</code></td><td>GPIO0 interrupt to irq_periph_src[1] -- probed by testbench</td></tr>
+      <tr><td><code>timer0_irq</code></td><td>Timer0 interrupt to irq_periph_src[3] -- probed by testbench</td></tr>
+      <tr><td><code>gpio1_irq</code></td><td>GPIO1 interrupt to irq_periph_src[2] -- probed by testbench</td></tr>
+      <tr><td><code>wdt_irq</code></td><td>Watchdog interrupt to irq_periph_src[4] -- probed by testbench</td></tr>
+      <tr><td><code>aes0_done</code> .. <code>aes3_done</code></td><td>1-cycle done pulses from each AES engine; OR-fed to irq_crypto_src[0..3] and perf ch[3] -- probed by testbench</td></tr>
+      </table>
+    </div>
+  </div>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>2x3 TileLink NoC AES Crypto SoC — Architecture</title>
+<style>
+:root{--bg:#f8f9fc;--bg2:#ffffff;--bg3:#f0f2f7;--bd:#dde1eb;--fg:#1a1d2e;--dim:#6b7280;
+      --a:#1d6ed8;--a2:#2a7a1a;--a3:#b45309;--a4:#7c3aed;--danger:#b91c1c;--sw:240px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--fg);display:flex;min-height:100vh;}
+nav{position:fixed;top:0;left:0;width:var(--sw);height:100vh;background:var(--bg2);
+    border-right:1px solid var(--bd);overflow-y:auto;z-index:100;padding:0 0 2rem;
+    box-shadow:2px 0 8px rgba(0,0,0,.06);}
+.nh{padding:1.2rem 1rem 1rem;border-bottom:1px solid var(--bd);margin-bottom:.5rem;}
+.nh .t{font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--a);}
+.nh .s{font-size:.68rem;color:var(--dim);margin-top:.2rem;}
+nav a{display:block;padding:.45rem 1rem .45rem 1.2rem;font-size:.78rem;color:var(--dim);
+      text-decoration:none;border-left:2px solid transparent;transition:all .15s;}
+nav a:hover{color:var(--fg);background:var(--bg3);border-left-color:var(--a);}
+.ns{font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--dim);padding:1rem 1rem .3rem;}
+main{margin-left:var(--sw);flex:1;padding:2rem 2.5rem 4rem;max-width:1200px;}
+.ph{margin-bottom:2.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--bd);}
+.ph h1{font-size:1.6rem;font-weight:700;color:var(--fg);margin-bottom:.4rem;}
+.pm{font-size:.82rem;color:var(--dim);}
+.badge{display:inline-block;padding:.15rem .55rem;border-radius:999px;font-size:.7rem;font-weight:600;margin-right:.4rem;}
+.be{background:rgba(42,122,26,.1);color:var(--a2);border:1px solid rgba(42,122,26,.25);}
+.bi{background:rgba(29,110,216,.1);color:var(--a);border:1px solid rgba(29,110,216,.25);}
+.ba{background:rgba(180,83,9,.1);color:var(--a3);border:1px solid rgba(180,83,9,.25);}
+.bm{background:rgba(124,58,237,.1);color:var(--a4);border:1px solid rgba(124,58,237,.25);}
+.sec{margin-bottom:3rem;scroll-margin-top:1.5rem;}
+.sh{display:flex;align-items:baseline;gap:.75rem;margin-bottom:1rem;}
+.sn{font-size:.7rem;font-weight:700;color:var(--dim);}
+.sec h2{font-size:1.1rem;font-weight:700;color:var(--fg);}
+.st{font-size:.68rem;padding:.1rem .45rem;border-radius:4px;font-weight:500;}
+.tc{background:rgba(29,110,216,.1);color:var(--a);border:1px solid rgba(29,110,216,.2);}
+.tr{background:rgba(109,40,217,.1);color:#6d28d9;border:1px solid rgba(109,40,217,.2);}
+.tg{background:rgba(42,122,26,.1);color:var(--a2);border:1px solid rgba(42,122,26,.2);}
+.ti{background:rgba(180,83,9,.1);color:var(--a3);border:1px solid rgba(180,83,9,.2);}
+.tp{background:rgba(185,28,28,.1);color:var(--danger);border:1px solid rgba(185,28,28,.2);}
+.dc{background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:1.5rem;
+    overflow-x:auto;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.rtw{margin-top:1.2rem;border-top:1px solid var(--bd);padding-top:1rem;}
+.rtl{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin-bottom:.5rem;}
+table{width:100%;border-collapse:collapse;font-size:.78rem;}
+th{background:var(--bg3);color:var(--dim);font-size:.68rem;font-weight:600;letter-spacing:.06em;
+   text-transform:uppercase;padding:.5rem .75rem;text-align:left;border-bottom:1px solid var(--bd);}
+td{padding:.4rem .75rem;border-bottom:1px solid var(--bd);vertical-align:top;color:var(--fg);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--bg3);}
+td:first-child{font-family:'Courier New',monospace;color:var(--a);font-size:.76rem;}
+td:nth-child(2){color:var(--a3);font-weight:600;}
+.w1c{color:#b45309!important;font-size:.68rem;font-weight:600;}
+.ro{color:#2a7a1a!important;font-size:.68rem;font-weight:600;}
+.wo{color:#7c3aed!important;font-size:.68rem;font-weight:600;}
+.rw{color:#1d6ed8!important;font-size:.68rem;font-weight:600;}
+.co{background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;padding:.6rem 1rem;
+    font-size:.82rem;color:#78350f;margin-bottom:1rem;line-height:1.5;}
+.co strong{color:#92400e;}
+.ps{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:1rem 1.2rem;
+    margin-bottom:2rem;font-size:.85rem;color:#1e3a5f;line-height:1.7;}
+.ps h3{font-size:.9rem;font-weight:700;color:#1d4ed8;margin-bottom:.5rem;}
+.ps ol{padding-left:1.2rem;}
+.ps li{margin-bottom:.25rem;}
+.ps code{background:#dbeafe;padding:.1rem .3rem;border-radius:3px;font-size:.8rem;font-family:'Courier New',monospace;}
+.deliv{background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:1rem 1.2rem;
+    font-size:.85rem;color:#14532d;line-height:1.7;}
+.deliv h3{font-size:.9rem;font-weight:700;color:#15803d;margin-bottom:.5rem;}
+.deliv code{background:#dcfce7;padding:.1rem .3rem;border-radius:3px;font-size:.8rem;font-family:'Courier New',monospace;}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--bd);border-radius:3px;}
+@media(max-width:768px){nav{display:none;}main{margin-left:0;padding:1rem;}}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nh"><div class="t">NXP SoC &middot; Medium</div><div class="s">2x3 TileLink NoC AES SoC</div></div>
+  <div class="ns">Architecture</div>
+  <a href="#soc-top">01 &middot; SoC Top-Level</a>
+  <a href="#reset-sync">02 &middot; Reset Synchronizer</a>
+  <div class="ns">NoC</div>
+  <a href="#tl-router">03 &middot; TileLink Router</a>
+  <a href="#tl-ni">04 &middot; TileLink NI</a>
+  <div class="ns">Memory &amp; Compute</div>
+  <a href="#axi-sram">05 &middot; AXI-Lite SRAM</a>
+  <a href="#aes-engine">06 &middot; AES-128 Engine</a>
+  <div class="ns">Interrupt &amp; Map</div>
+  <a href="#irq-agg">07 &middot; IRQ Aggregator</a>
+  <a href="#addr-map">08 &middot; Address Map</a>
+  <div class="ns">Contract</div>
+  <a href="#impl-contract">09 &middot; Implementation Contract</a>
+</nav>
+<main>
+  <div class="ph">
+    <h1>2x3 TileLink NoC AES Crypto SoC</h1>
+    <div class="pm"><span class="badge bm">MEDIUM</span><span class="badge bi">iverilog</span><span class="badge ba">TileLink-UL &middot; AES-128</span>Architecture reference &mdash; diagrams + minimal spec</div>
+  </div>
+  <div class="ps">
+    <h3>Problem Statement</h3>
+    <p>Study the architecture diagrams below to understand this 2x3 mesh NoC crypto SoC and every IP block within it. From the structure shown, determine the configuration of each block, generate the corresponding RTL, and stitch the full SoC together so that the provided testbench passes. The diagrams describe the intended connectivity and behaviour; the numeric configuration of each block is for you to infer from the evidence presented.</p>
+  </div>
+
+
+  <div class="sec" id="soc-top">
+    <div class="sh"><span class="sn">01</span><h2>SoC Top-Level Interconnect</h2><span class="st tc">2x3 mesh graph</span></div>
+    <div class="co">The CPU AXI4-Lite master enters the mesh at node <strong>(0,0)</strong> via a TileLink NI. <strong>AES0</strong> sits at node (1,0) and <strong>AES1</strong> at node (1,1). Each of the 6 nodes has one router, one NI, and one SRAM. Horizontal links connect East(p2)&harr;West(p3); vertical links connect North(p0)&harr;South(p1). Boundary ports have no neighbour. Use this diagram to wire up the mesh interconnect.</div>
+    <div class="dc"><svg style="max-width:100%;height:auto;background:#ffffff;border-radius:6px;" width="900" height="660" viewBox="0 0 900 660" xmlns="http://www.w3.org/2000/svg">
+<defs><marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto-start-reverse"><polygon points="0 0,8 3,0 6" fill="#4a9eff"/></marker>
+<marker id="arr2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto-start-reverse"><polygon points="0 0,8 3,0 6" fill="#7bc142"/></marker>
+<marker id="arr3" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto-start-reverse"><polygon points="0 0,8 3,0 6" fill="#c084fc"/></marker></defs>
+<!-- E-W links row y=0 (bidirectional) -->
+<line x1="245" y1="540" x2="545" y2="540" stroke="#4a9eff" stroke-width="2" marker-start="url(#arr)" marker-end="url(#arr)"/>
+<text x="395" y="526" fill="#1d6ed8" font-size="10" text-anchor="middle" font-family="Helvetica">E(p2) &#8596; W(p3)</text>
+<!-- E-W links row y=1 -->
+<line x1="245" y1="330" x2="545" y2="330" stroke="#4a9eff" stroke-width="2" marker-start="url(#arr)" marker-end="url(#arr)"/>
+<text x="395" y="316" fill="#1d6ed8" font-size="10" text-anchor="middle" font-family="Helvetica">E(p2) &#8596; W(p3)</text>
+<!-- E-W links row y=2 -->
+<line x1="245" y1="120" x2="545" y2="120" stroke="#4a9eff" stroke-width="2" marker-start="url(#arr)" marker-end="url(#arr)"/>
+<text x="395" y="106" fill="#1d6ed8" font-size="10" text-anchor="middle" font-family="Helvetica">E(p2) &#8596; W(p3)</text>
+<!-- N-S links col x=0 (bidirectional) -->
+<line x1="165" y1="453" x2="165" y2="380" stroke="#7bc142" stroke-width="2" marker-start="url(#arr2)" marker-end="url(#arr2)"/>
+<text x="148" y="420" fill="#2a7a1a" font-size="9" text-anchor="middle" font-family="Helvetica" transform="rotate(-90,148,420)">N(p0)&#8596;S(p1)</text>
+<line x1="165" y1="243" x2="165" y2="170" stroke="#7bc142" stroke-width="2" marker-start="url(#arr2)" marker-end="url(#arr2)"/>
+<text x="148" y="210" fill="#2a7a1a" font-size="9" text-anchor="middle" font-family="Helvetica" transform="rotate(-90,148,210)">N(p0)&#8596;S(p1)</text>
+<!-- N-S links col x=1 -->
+<line x1="625" y1="453" x2="625" y2="380" stroke="#7bc142" stroke-width="2" marker-start="url(#arr2)" marker-end="url(#arr2)"/>
+<text x="642" y="420" fill="#2a7a1a" font-size="9" text-anchor="middle" font-family="Helvetica" transform="rotate(90,642,420)">N(p0)&#8596;S(p1)</text>
+<line x1="625" y1="243" x2="625" y2="170" stroke="#7bc142" stroke-width="2" marker-start="url(#arr2)" marker-end="url(#arr2)"/>
+<text x="642" y="210" fill="#2a7a1a" font-size="9" text-anchor="middle" font-family="Helvetica" transform="rotate(90,642,210)">N(p0)&#8596;S(p1)</text>
+
+<!-- Node (0,0) CPU entry -->
+<path fill="#1a3a5c" stroke="#4a9eff" stroke-width="2" d="M87,510 L243,510 Q251,510 251,502 L251,468 Q251,460 243,460 L87,460 Q79,460 79,468 L79,502 Q79,510 87,510"/>
+<text x="165" y="480" fill="#cdd6f4" font-size="11" text-anchor="middle" font-family="Helvetica">router_00 &nbsp; ni_00</text>
+<text x="165" y="494" fill="#cdd6f4" font-size="10" text-anchor="middle" font-family="Helvetica">sram_00 &nbsp; CPU Entry</text>
+<text x="165" y="556" fill="#1d6ed8" font-size="10" text-anchor="middle" font-family="Helvetica" font-weight="bold">(x=0, y=0)</text>
+<!-- Node (0,1) -->
+<path fill="#2d3748" stroke="#6c7086" stroke-width="1.5" d="M87,300 L243,300 Q251,300 251,292 L251,258 Q251,250 243,250 L87,250 Q79,250 79,258 L79,292 Q79,300 87,300"/>
+<text x="165" y="270" fill="#cdd6f4" font-size="11" text-anchor="middle" font-family="Helvetica">router_01 &nbsp; ni_01</text>
+<text x="165" y="284" fill="#cdd6f4" font-size="10" text-anchor="middle" font-family="Helvetica">sram_01</text>
+<text x="165" y="316" fill="#6b7280" font-size="10" text-anchor="middle" font-family="Helvetica">(x=0, y=1)</text>
+<!-- Node (0,2) -->
+<path fill="#2d3748" stroke="#6c7086" stroke-width="1.5" d="M87,90 L243,90 Q251,90 251,82 L251,48 Q251,40 243,40 L87,40 Q79,40 79,48 L79,82 Q79,90 87,90"/>
+<text x="165" y="60" fill="#cdd6f4" font-size="11" text-anchor="middle" font-family="Helvetica">router_02 &nbsp; ni_02</text>
+<text x="165" y="74" fill="#cdd6f4" font-size="10" text-anchor="middle" font-family="Helvetica">sram_02</text>
+<text x="165" y="106" fill="#6b7280" font-size="10" text-anchor="middle" font-family="Helvetica">(x=0, y=2)</text>
+<!-- Node (1,0) AES0 -->
+<path fill="#3d1a1a" stroke="#f38ba8" stroke-width="2" d="M547,510 L703,510 Q711,510 711,502 L711,468 Q711,460 703,460 L547,460 Q539,460 539,468 L539,502 Q539,510 547,510"/>
+<text x="625" y="477" fill="#cdd6f4" font-size="11" text-anchor="middle" font-family="Helvetica">router_10 &nbsp; ni_10</text>
+<text x="625" y="491" fill="#cdd6f4" font-size="10" text-anchor="middle" font-family="Helvetica">sram_10 &nbsp; AES0</text>
+<text x="625" y="556" fill="#f38ba8" font-size="10" text-anchor="middle" font-family="Helvetica" font-weight="bold">(x=1, y=0)</text>
+<!-- Node (1,1) AES1 -->
+<path fill="#3d1a1a" stroke="#f38ba8" stroke-width="2" d="M547,300 L703,300 Q711,300 711,292 L711,258 Q711,250 703,250 L547,250 Q539,250 539,258 L539,292 Q539,300 547,300"/>
+<text x="625" y="267" fill="#cdd6f4" font-size="11" text-anchor="middle" font-family="Helvetica">router_11 &nbsp; ni_11</text>
+<text x="625" y="281" fill="#cdd6f4" font-size="10" text-anchor="middle" font-family="Helvetica">sram_11 &nbsp; AES1</text>
+<text x="625" y="316" fill="#f38ba8" font-size="10" text-anchor="middle" font-family="Helvetica" font-weight="bold">(x=1, y=1)</text>
+<!-- Node (1,2) -->
+<path fill="#2d3748" stroke="#6c7086" stroke-width="1.5" d="M547,90 L703,90 Q711,90 711,82 L711,48 Q711,40 703,40 L547,40 Q539,40 539,48 L539,82 Q539,90 547,90"/>
+<text x="625" y="57" fill="#cdd6f4" font-size="11" text-anchor="middle" font-family="Helvetica">router_12 &nbsp; ni_12</text>
+<text x="625" y="71" fill="#cdd6f4" font-size="10" text-anchor="middle" font-family="Helvetica">sram_12</text>
+<text x="625" y="106" fill="#6b7280" font-size="10" text-anchor="middle" font-family="Helvetica">(x=1, y=2)</text>
+<!-- CPU block -->
+<path fill="#1a3a5c" stroke="#4a9eff" stroke-width="2" d="M800,510 L875,510 Q883,510 883,502 L883,468 Q883,460 875,460 L800,460 Q792,460 792,468 L792,502 Q792,510 800,510"/>
+<text x="837" y="480" fill="#cdd6f4" font-size="11" text-anchor="middle" font-family="Helvetica">CPU</text>
+<text x="837" y="494" fill="#cdd6f4" font-size="9" text-anchor="middle" font-family="Helvetica">AXI4-Lite</text>
+<line x1="792" y1="485" x2="711" y2="485" stroke="#4a9eff" stroke-width="2" marker-end="url(#arr)"/>
+<!-- IRQ aggregator -->
+<path fill="#2d1a3e" stroke="#c084fc" stroke-width="1.5" d="M310,620 L590,620 Q598,620 598,612 L598,594 Q598,586 590,586 L310,586 Q302,586 302,594 L302,612 Q302,620 310,620"/>
+<text x="450" y="601" fill="#cdd6f4" font-size="11" text-anchor="middle" font-family="Helvetica">irq_aggregator</text>
+<text x="450" y="614" fill="#c084fc" font-size="9" text-anchor="middle" font-family="Helvetica">src[0]=aes0_done &nbsp; src[1]=aes1_done &nbsp; cpu_irq + cpu_irq_id[2:0]</text>
+<line x1="625" y1="510" x2="520" y2="586" stroke="#c084fc" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arr3)"/>
+<!-- reset_sync -->
+<path fill="#1a2e1a" stroke="#7bc142" stroke-width="1.5" d="M10,640 L200,640 Q208,640 208,632 L208,616 Q208,608 200,608 L10,608 Q2,608 2,616 L2,632 Q2,640 10,640"/>
+<text x="105" y="622" fill="#cdd6f4" font-size="10" text-anchor="middle" font-family="Helvetica">reset_sync</text>
+<text x="105" y="634" fill="#a6e3a1" font-size="8" text-anchor="middle" font-family="Helvetica">por_n in &nbsp; rst_n out</text>
+<!-- col/row labels -->
+<text x="165" y="638" fill="#6b7280" font-size="10" text-anchor="middle" font-family="Helvetica">col x=0</text>
+<text x="625" y="638" fill="#6b7280" font-size="10" text-anchor="middle" font-family="Helvetica">col x=1</text>
+<text x="870" y="545" fill="#6b7280" font-size="9" text-anchor="end" font-family="Helvetica">row y=0</text>
+<text x="870" y="280" fill="#6b7280" font-size="9" text-anchor="end" font-family="Helvetica">row y=1</text>
+<text x="870" y="68" fill="#6b7280" font-size="9" text-anchor="end" font-family="Helvetica">row y=2</text>
+</svg></div>
+  </div>
+
+  <div class="sec" id="reset-sync">
+    <div class="sh"><span class="sn">02</span><h2>Reset Synchronizer</h2><span class="st tr">FF sync chain</span></div>
+    <div class="co">Generates <strong>rst_n</strong>: asserts asynchronously on POR, deasserts synchronously after passing through the flip-flop chain shown below. Determine the number of synchronizer stages from the structure of the diagram.</div>
+    <div class="dc"><svg style="max-width:100%;height:auto;background:#ffffff;border-radius:6px;" width="820" height="180" viewBox="0 0 820 180" xmlns="http://www.w3.org/2000/svg">
+<text x="410" y="18" fill="#6b7280" font-size="11" text-anchor="middle" font-family="Helvetica">reset_sync: por_n asserts async, deasserts synchronously through the FF chain</text>
+<!-- por_n -->
+<path fill="#1a2e1a" stroke="#7bc142" stroke-width="1.5" d="M10,80 L90,80 Q98,80 98,72 L98,52 Q98,44 90,44 L10,44 Q2,44 2,52 L2,72 Q2,80 10,80"/>
+<text x="50" y="60" fill="#cdd6f4" font-size="11" text-anchor="middle" font-family="Helvetica">por_n</text>
+<text x="50" y="74" fill="#a6e3a1" font-size="9" text-anchor="middle" font-family="Helvetica">active-low</text>
+<line x1="98" y1="62" x2="130" y2="62" stroke="#7bc142" stroke-width="1.5"/>
+<!-- 4 FF boxes -->
+<path fill="#1e2d4a" stroke="#4a9eff" stroke-width="1.5" d="M130,82 L220,82 Q228,82 228,74 L228,50 Q228,42 220,42 L130,42 Q122,42 122,50 L122,74 Q122,82 130,82"/>
+<text x="175" y="60" fill="#cdd6f4" font-size="12" font-weight="bold" text-anchor="middle" font-family="Helvetica">FF1</text>
+<text x="175" y="74" fill="#89b4fa" font-size="9" text-anchor="middle" font-family="Helvetica">posedge clk</text>
+<line x1="228" y1="62" x2="260" y2="62" stroke="#4a9eff" stroke-width="1.5"/>
+
+<path fill="#1e2d4a" stroke="#4a9eff" stroke-width="1.5" d="M260,82 L350,82 Q358,82 358,74 L358,50 Q358,42 350,42 L260,42 Q252,42 252,50 L252,74 Q252,82 260,82"/>
+<text x="305" y="60" fill="#cdd6f4" font-size="12" font-weight="bold" text-anchor="middle" font-family="Helvetica">FF2</text>
+<text x="305" y="74" fill="#89b4fa" font-size="9" text-anchor="middle" font-family="Helvetica">posedge clk</text>
+<line x1="358" y1="62" x2="390" y2="62" stroke="#4a9eff" stroke-width="1.5"/>
+
+<path fill="#1e2d4a" stroke="#4a9eff" stroke-width="1.5" d="M390,82 L480,82 Q488,82 488,74 L488,50 Q488,42 480,42 L390,42 Q382,42 382,50 L382,74 Q382,82 390,82"/>
+<text x="435" y="60" fill="#cdd6f4" font-size="12" font-weight="bold" text-anchor="middle" font-family="Helvetica">FF3</text>
+<text x="435" y="74" fill="#89b4fa" font-size="9" text-anchor="middle" font-family="Helvetica">posedge clk</text>
+<line x1="488" y1="62" x2="520" y2="62" stroke="#4a9eff" stroke-width="1.5"/>
+
+<path fill="#1e2d4a" stroke="#4a9eff" stroke-width="1.5" d="M520,82 L610,82 Q618,82 618,74 L618,50 Q618,42 610,42 L520,42 Q512,42 512,50 L512,74 Q512,82 520,82"/>
+<text x="565" y="60" fill="#cdd6f4" font-size="12" font-weight="bold" text-anchor="middle" font-family="Helvetica">FF4</text>
+<text x="565" y="74" fill="#89b4fa" font-size="9" text-anchor="middle" font-family="Helvetica">posedge clk</text>
+<line x1="618" y1="62" x2="650" y2="62" stroke="#4a9eff" stroke-width="1.5"/>
+<!-- rst_n output -->
+<path fill="#1a2e1a" stroke="#7bc142" stroke-width="1.5" d="M650,80 L730,80 Q738,80 738,72 L738,50 Q738,42 730,42 L650,42 Q642,42 642,50 L642,72 Q642,80 650,80"/>
+<text x="690" y="60" fill="#cdd6f4" font-size="11" text-anchor="middle" font-family="Helvetica">sys_rst_n</text>
+<text x="690" y="74" fill="#a6e3a1" font-size="9" text-anchor="middle" font-family="Helvetica">active-low</text>
+<text x="410" y="155" fill="#6b7280" font-size="11" text-anchor="middle" font-family="Helvetica">The synchronizer depth is defined by the number of FF boxes drawn above.</text>
+</svg></div>
+  </div>
+
+  <div class="sec" id="tl-router">
+    <div class="sh"><span class="sn">03</span><h2>TileLink-UL Router</h2><span class="st tc">XY routing</span></div>
+    <div class="co">Each router node exposes the ports drawn below: North(p0), South(p1), East(p2), West(p3), and a Local(p4) port to its NI. Routing is XY-first: packets hop East/West to reach the target column, then North/South to reach the target row, then deliver to Local. Address bits <strong>[31:28]&nbsp;=&nbsp;dest_x</strong>, <strong>[27:24]&nbsp;=&nbsp;dest_y</strong>. Determine the port count and bus widths from the interface shown.</div>
+    <div class="co"><strong>Link wiring principle:</strong> Each mesh link is a single shared TileLink bus. The East port (p2) of one router and the West port (p3) of its eastern neighbour are the <em>same physical wires</em> — they must be connected together, not driven independently. The same applies to the North (p0) and South (p1) ports of vertically adjacent routers.</div>
+    <div class="dc"><svg style="max-width:100%;height:auto;background:#ffffff;border-radius:6px;" width="820" height="420" viewBox="0 0 820 420" xmlns="http://www.w3.org/2000/svg">
+<defs><marker id="rta" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto-start-reverse"><polygon points="0 0,8 3,0 6" fill="#4a9eff"/></marker>
+<marker id="rto" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto-start-reverse"><polygon points="0 0,8 3,0 6" fill="#ffa500"/></marker></defs>
+<!-- router box -->
+<path fill="#1e2d4a" stroke="#4a9eff" stroke-width="2" d="M290,180 L530,180 Q540,180 540,170 L540,110 Q540,100 530,100 L290,100 Q280,100 280,110 L280,170 Q280,180 290,180"/>
+<text x="410" y="134" fill="#cdd6f4" font-size="13" font-weight="bold" text-anchor="middle" font-family="Helvetica">tilelink_router</text>
+<text x="410" y="152" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="Helvetica">XY routing: addr[31:28]=dest_x &nbsp; addr[27:24]=dest_y</text>
+<text x="410" y="166" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="Helvetica">A channel (request) in / D channel (response) out per port</text>
+<!-- p0 North (bidirectional) -->
+<line x1="410" y1="100" x2="410" y2="44" stroke="#4a9eff" stroke-width="2" marker-start="url(#rta)" marker-end="url(#rta)"/>
+<text x="410" y="34" fill="#1a1d2e" font-size="10" text-anchor="middle" font-family="Helvetica" font-weight="bold">p0 North</text>
+<!-- p1 South -->
+<line x1="410" y1="180" x2="410" y2="236" stroke="#4a9eff" stroke-width="2" marker-start="url(#rta)" marker-end="url(#rta)"/>
+<text x="410" y="252" fill="#1a1d2e" font-size="10" text-anchor="middle" font-family="Helvetica" font-weight="bold">p1 South</text>
+<!-- p2 East -->
+<line x1="540" y1="128" x2="640" y2="128" stroke="#4a9eff" stroke-width="2" marker-start="url(#rta)" marker-end="url(#rta)"/>
+<text x="700" y="125" fill="#1a1d2e" font-size="10" text-anchor="start" font-family="Helvetica" font-weight="bold">p2 East</text>
+<!-- p3 West -->
+<line x1="280" y1="128" x2="180" y2="128" stroke="#4a9eff" stroke-width="2" marker-start="url(#rta)" marker-end="url(#rta)"/>
+<text x="120" y="125" fill="#1a1d2e" font-size="10" text-anchor="end" font-family="Helvetica" font-weight="bold">p3 West</text>
+<!-- p4 Local -->
+<line x1="540" y1="158" x2="640" y2="172" stroke="#ffa500" stroke-width="2" marker-start="url(#rto)" marker-end="url(#rto)"/>
+<text x="648" y="170" fill="#b45309" font-size="10" text-anchor="start" font-family="Helvetica" font-weight="bold">p4 Local (NI)</text>
+<!-- guidance labels -->
+<text x="410" y="320" fill="#6b7280" font-size="11" text-anchor="middle" font-family="Helvetica">Count the ports drawn above to determine the router port count.</text>
+<text x="410" y="338" fill="#6b7280" font-size="11" text-anchor="middle" font-family="Helvetica">Bus data and address widths follow from the TL-UL channel signals used by the NI.</text>
+</svg></div>
+  </div>
+
+  <div class="sec" id="tl-ni">
+    <div class="sh"><span class="sn">04</span><h2>TileLink NI &mdash; AXI4-Lite to TL-UL Bridge</h2><span class="st tc">bridge</span></div>
+    <div class="co">One Network Interface per node. The NI bridges the AXI4-Lite master (CPU or internal) to the TileLink-UL A/D channels. The NI acts as an <strong>AXI slave</strong> on one side and a <strong>TL-UL master</strong> on the other. The AXI and TL-UL data and address widths match; determine them from the bus signals shown.</div>
+    <div class="dc"><svg style="max-width:100%;height:auto;background:#ffffff;border-radius:6px;" width="820" height="200" viewBox="0 0 820 200" xmlns="http://www.w3.org/2000/svg">
+<defs><marker id="na" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto-start-reverse"><polygon points="0 0,8 3,0 6" fill="#4a9eff"/></marker>
+<marker id="na2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto-start-reverse"><polygon points="0 0,8 3,0 6" fill="#7bc142"/></marker></defs>
+<!-- AXI side -->
+<path fill="#1a3a5c" stroke="#4a9eff" stroke-width="1.5" d="M20,150 L200,150 Q208,150 208,142 L208,58 Q208,50 200,50 L20,50 Q12,50 12,58 L12,142 Q12,150 20,150"/>
+<text x="110" y="88" fill="#cdd6f4" font-size="12" font-weight="bold" text-anchor="middle" font-family="Helvetica">AXI4-Lite Master</text>
+<text x="110" y="104" fill="#89b4fa" font-size="10" text-anchor="middle" font-family="Helvetica">awaddr / araddr</text>
+<text x="110" y="118" fill="#89b4fa" font-size="10" text-anchor="middle" font-family="Helvetica">wdata / rdata</text>
+<text x="110" y="132" fill="#89b4fa" font-size="10" text-anchor="middle" font-family="Helvetica">wstrb</text>
+<!-- NI box -->
+<path fill="#2d1a3e" stroke="#c084fc" stroke-width="2" d="M290,155 L530,155 Q540,155 540,145 L540,55 Q540,45 530,45 L290,45 Q280,45 280,55 L280,145 Q280,155 290,155"/>
+<text x="410" y="92" fill="#cdd6f4" font-size="13" font-weight="bold" text-anchor="middle" font-family="Helvetica">tilelink_ni</text>
+<text x="410" y="110" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="Helvetica">AXI slave in &rarr; TL-A master out</text>
+<text x="410" y="124" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="Helvetica">TL-D slave in &rarr; AXI response out</text>
+<!-- TL side -->
+<path fill="#1a2e1a" stroke="#7bc142" stroke-width="1.5" d="M620,150 L800,150 Q808,150 808,142 L808,58 Q808,50 800,50 L620,50 Q612,50 612,58 L612,142 Q612,150 620,150"/>
+<text x="710" y="86" fill="#cdd6f4" font-size="12" font-weight="bold" text-anchor="middle" font-family="Helvetica">TL-UL Channels</text>
+<text x="710" y="102" fill="#a6e3a1" font-size="10" text-anchor="middle" font-family="Helvetica">tl_a_data</text>
+<text x="710" y="116" fill="#a6e3a1" font-size="10" text-anchor="middle" font-family="Helvetica">tl_a_addr</text>
+<text x="710" y="130" fill="#a6e3a1" font-size="10" text-anchor="middle" font-family="Helvetica">tl_a_mask</text>
+<text x="710" y="144" fill="#a6e3a1" font-size="10" text-anchor="middle" font-family="Helvetica">tl_d_data</text>
+<!-- arrows (bidirectional request/response) -->
+<line x1="208" y1="100" x2="278" y2="100" stroke="#4a9eff" stroke-width="2" marker-start="url(#na)" marker-end="url(#na)"/>
+<line x1="540" y1="100" x2="610" y2="100" stroke="#7bc142" stroke-width="2" marker-start="url(#na2)" marker-end="url(#na2)"/>
+</svg></div>
+  </div>
+
+  <div class="sec" id="axi-sram">
+    <div class="sh"><span class="sn">05</span><h2>AXI-Lite SRAM</h2><span class="st tg">memory slave</span></div>
+    <div class="co">Each node contains one AXI4-Lite SRAM used as the node's local memory. Determine its depth, data width, and address width from the interface signals drawn; the address bus is sized to address every word of the memory.</div>
+    <div class="dc"><svg style="max-width:100%;height:auto;background:#ffffff;border-radius:6px;" width="820" height="200" viewBox="0 0 820 200" xmlns="http://www.w3.org/2000/svg">
+<defs><marker id="sra" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto-start-reverse"><polygon points="0 0,8 3,0 6" fill="#1d6ed8"/></marker>
+<marker id="srg" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto-start-reverse"><polygon points="0 0,8 3,0 6" fill="#2a7a1a"/></marker></defs>
+<!-- SRAM box -->
+<path fill="#1a2e1a" stroke="#7bc142" stroke-width="2" d="M300,160 L520,160 Q530,160 530,150 L530,50 Q530,40 520,40 L300,40 Q290,40 290,50 L290,150 Q290,160 300,160"/>
+<text x="410" y="92" fill="#cdd6f4" font-size="13" font-weight="bold" text-anchor="middle" font-family="Helvetica">axi_lite_sram</text>
+<text x="410" y="112" fill="#94a3b8" font-size="10" text-anchor="middle" font-family="Helvetica">AXI4-Lite slave &mdash; local node memory</text>
+<!-- write channel arrows (into SRAM) -->
+<line x1="90" y1="78" x2="288" y2="78" stroke="#1d6ed8" stroke-width="2" marker-end="url(#sra)"/>
+<text x="88" y="74" fill="#1d6ed8" font-size="10" text-anchor="end" font-family="Helvetica">aw / w / wstrb (write)</text>
+<!-- read address arrow (into SRAM) -->
+<line x1="90" y1="112" x2="288" y2="112" stroke="#1d6ed8" stroke-width="2" marker-end="url(#sra)"/>
+<text x="88" y="108" fill="#1d6ed8" font-size="10" text-anchor="end" font-family="Helvetica">ar (read addr)</text>
+<!-- read data arrow (out of SRAM) -->
+<line x1="288" y1="140" x2="90" y2="140" stroke="#2a7a1a" stroke-width="2" marker-end="url(#srg)"/>
+<text x="88" y="136" fill="#2a7a1a" font-size="10" text-anchor="end" font-family="Helvetica">r (read data) / b (resp)</text>
+</svg></div>
+  </div>
+
+  <div class="sec" id="aes-engine">
+    <div class="sh"><span class="sn">06</span><h2>AES-128 Engine</h2><span class="st tp">aes0 @ (1,0) &nbsp;&nbsp; aes1 @ (1,1)</span></div>
+    <div class="co">Two AES-128 engines are instantiated as <code>aes0</code> (at node 1,0) and <code>aes1</code> (at node 1,1). Both use <code>ip_type: aes128</code> but different names. Each engine takes a 128-bit key and 128-bit plaintext and outputs 128-bit ciphertext. The <strong>done</strong> output is a single-cycle pulse after 10 rounds. The <strong>busy</strong> output is high during computation.</div>
+    <div class="dc"><svg style="max-width:100%;height:auto;background:#ffffff;border-radius:6px;" width="820" height="240" viewBox="0 0 820 240" xmlns="http://www.w3.org/2000/svg">
+<!-- AES0 box -->
+<path fill="#3d1a1a" stroke="#f38ba8" stroke-width="2" d="M20,190 L380,190 Q390,190 390,180 L390,50 Q390,40 380,40 L20,40 Q10,40 10,50 L10,180 Q10,190 20,190"/>
+<text x="200" y="72" fill="#f38ba8" font-size="12" font-weight="bold" text-anchor="middle" font-family="Helvetica">aes0 &nbsp; node (1,0)</text>
+<text x="200" y="88" fill="#89b4fa" font-size="10" text-anchor="middle" font-family="Helvetica">ip_type: aes128 &nbsp; name: aes0</text>
+<text x="200" y="106" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="Helvetica">key_in [127:0] &nbsp; key_valid</text>
+<text x="200" y="120" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="Helvetica">data_in [127:0] &nbsp; start &nbsp; encrypt</text>
+<text x="200" y="140" fill="#a6e3a1" font-size="9" text-anchor="middle" font-family="Helvetica">data_out [127:0]</text>
+<text x="200" y="156" fill="#a6e3a1" font-size="9" text-anchor="middle" font-family="Helvetica">done (1-cycle pulse after 10 rounds)</text>
+<text x="200" y="172" fill="#a6e3a1" font-size="9" text-anchor="middle" font-family="Helvetica">busy (high during encryption)</text>
+<text x="200" y="210" fill="#f38ba8" font-size="10" text-anchor="middle" font-family="Helvetica">done &rarr; irq_aggregator src[0]</text>
+<!-- AES1 box -->
+<path fill="#3d1a1a" stroke="#f38ba8" stroke-width="2" d="M440,190 L800,190 Q810,190 810,180 L810,50 Q810,40 800,40 L440,40 Q430,40 430,50 L430,180 Q430,190 440,190"/>
+<text x="620" y="72" fill="#f38ba8" font-size="12" font-weight="bold" text-anchor="middle" font-family="Helvetica">aes1 &nbsp; node (1,1)</text>
+<text x="620" y="88" fill="#89b4fa" font-size="10" text-anchor="middle" font-family="Helvetica">ip_type: aes128 &nbsp; name: aes1</text>
+<text x="620" y="106" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="Helvetica">key_in [127:0] &nbsp; key_valid</text>
+<text x="620" y="120" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="Helvetica">data_in [127:0] &nbsp; start &nbsp; encrypt</text>
+<text x="620" y="140" fill="#a6e3a1" font-size="9" text-anchor="middle" font-family="Helvetica">data_out [127:0]</text>
+<text x="620" y="156" fill="#a6e3a1" font-size="9" text-anchor="middle" font-family="Helvetica">done (1-cycle pulse after 10 rounds)</text>
+<text x="620" y="172" fill="#a6e3a1" font-size="9" text-anchor="middle" font-family="Helvetica">busy (high during encryption)</text>
+<text x="620" y="210" fill="#f38ba8" font-size="10" text-anchor="middle" font-family="Helvetica">done &rarr; irq_aggregator src[1]</text>
+</svg></div>
+  </div>
+
+  <div class="sec" id="irq-agg">
+    <div class="sh"><span class="sn">07</span><h2>IRQ Aggregator</h2><span class="st tc">8-source</span></div>
+    <div class="co">The IRQ aggregator collects up to 8 interrupt sources and outputs <code>cpu_irq</code> and <code>cpu_irq_id[2:0]</code>. Only <strong>2 sources are wired</strong>: <code>src[0] = aes0_done</code>, <code>src[1] = aes1_done</code>. Sources [7:2] are tied to 0.</div>
+    <div class="dc"><svg style="max-width:100%;height:auto;background:#ffffff;border-radius:6px;" width="820" height="190" viewBox="0 0 820 190" xmlns="http://www.w3.org/2000/svg">
+<defs><marker id="ia" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#c084fc"/></marker>
+<marker id="ib" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#7bc142"/></marker></defs>
+<!-- sources -->
+<path fill="#3d1a1a" stroke="#f38ba8" stroke-width="1.5" d="M20,80 L170,80 Q178,80 178,72 L178,52 Q178,44 170,44 L20,44 Q12,44 12,52 L12,72 Q12,80 20,80"/>
+<text x="95" y="60" fill="#f38ba8" font-size="10" text-anchor="middle" font-family="Helvetica" font-weight="bold">aes0_done</text>
+<text x="95" y="74" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="Helvetica">src[0]</text>
+<path fill="#3d1a1a" stroke="#f38ba8" stroke-width="1.5" d="M20,148 L170,148 Q178,148 178,140 L178,120 Q178,112 170,112 L20,112 Q12,112 12,120 L12,140 Q12,148 20,148"/>
+<text x="95" y="128" fill="#f38ba8" font-size="10" text-anchor="middle" font-family="Helvetica" font-weight="bold">aes1_done</text>
+<text x="95" y="142" fill="#94a3b8" font-size="8" text-anchor="middle" font-family="Helvetica">src[1]</text>
+<!-- IRQ AGG box -->
+<path fill="#2d1a3e" stroke="#c084fc" stroke-width="2" d="M290,162 L530,162 Q540,162 540,152 L540,38 Q540,28 530,28 L290,28 Q280,28 280,38 L280,152 Q280,162 290,162"/>
+<text x="410" y="56" fill="#cdd6f4" font-size="12" font-weight="bold" text-anchor="middle" font-family="Helvetica">irq_aggregator</text>
+<text x="410" y="74" fill="#89b4fa" font-size="10" text-anchor="middle" font-family="Helvetica">irq_src[7:0] &nbsp; (8 sources)</text>
+<text x="410" y="92" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="Helvetica">src[0] = aes0_done</text>
+<text x="410" y="106" fill="#94a3b8" font-size="9" text-anchor="middle" font-family="Helvetica">src[1] = aes1_done</text>
+<text x="410" y="120" fill="#6b7280" font-size="9" text-anchor="middle" font-family="Helvetica">src[7:2] = 0</text>
+<text x="410" y="140" fill="#a6e3a1" font-size="9" text-anchor="middle" font-family="Helvetica">cpu_irq &nbsp;&nbsp; cpu_irq_id[2:0]</text>
+<!-- outputs -->
+<path fill="#1a2e1a" stroke="#7bc142" stroke-width="1.5" d="M650,116 L800,116 Q808,116 808,108 L808,82 Q808,74 800,74 L650,74 Q642,74 642,82 L642,108 Q642,116 650,116"/>
+<text x="725" y="92" fill="#cdd6f4" font-size="11" text-anchor="middle" font-family="Helvetica">cpu_irq</text>
+<text x="725" y="108" fill="#a6e3a1" font-size="9" text-anchor="middle" font-family="Helvetica">cpu_irq_id[2:0]</text>
+<!-- arrows -->
+<line x1="178" y1="62" x2="278" y2="88" stroke="#f38ba8" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#ia)"/>
+<line x1="178" y1="130" x2="278" y2="110" stroke="#f38ba8" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#ia)"/>
+<line x1="540" y1="95" x2="640" y2="95" stroke="#7bc142" stroke-width="1.5" marker-end="url(#ib)"/>
+</svg></div>
+  </div>
+
+  <div class="sec" id="addr-map">
+    <div class="sh"><span class="sn">08</span><h2>Node Address Encoding</h2><span class="st ti">memory map</span></div>
+    <div class="co">The TileLink router uses the top 8 bits of the 32-bit address for XY routing: bits <strong>[31:28] = dest_x</strong>, bits <strong>[27:24] = dest_y</strong>. The remaining lower bits form the local offset into the destination SRAM.</div>
+    <div class="dc"><svg style="max-width:100%;height:auto;background:#ffffff;border-radius:6px;" width="820" height="240" viewBox="0 0 820 240" xmlns="http://www.w3.org/2000/svg">
+<text x="410" y="24" fill="#1a1d2e" font-size="13" font-weight="bold" text-anchor="middle" font-family="Helvetica">32-bit Address Format for XY Routing</text>
+<!-- bit field boxes -->
+<path fill="#1a3a5c" stroke="#4a9eff" stroke-width="1.5" d="M40,64 L200,64 Q208,64 208,56 L208,34 Q208,26 200,26 L40,26 Q32,26 32,34 L32,56 Q32,64 40,64"/>
+<text x="120" y="42" fill="#cdd6f4" font-size="11" font-weight="bold" text-anchor="middle" font-family="Helvetica">bits [31:28]</text>
+<text x="120" y="58" fill="#89b4fa" font-size="10" text-anchor="middle" font-family="Helvetica">dest_x (4 bits)</text>
+<path fill="#1a2e1a" stroke="#7bc142" stroke-width="1.5" d="M220,64 L380,64 Q388,64 388,56 L388,34 Q388,26 380,26 L220,26 Q212,26 212,34 L212,56 Q212,64 220,64"/>
+<text x="300" y="42" fill="#cdd6f4" font-size="11" font-weight="bold" text-anchor="middle" font-family="Helvetica">bits [27:24]</text>
+<text x="300" y="58" fill="#a6e3a1" font-size="10" text-anchor="middle" font-family="Helvetica">dest_y (4 bits)</text>
+<path fill="#3d2b00" stroke="#ffa500" stroke-width="1.5" d="M400,64 L788,64 Q796,64 796,56 L796,34 Q796,26 788,26 L400,26 Q392,26 392,34 L392,56 Q392,64 400,64"/>
+<text x="594" y="42" fill="#cdd6f4" font-size="11" font-weight="bold" text-anchor="middle" font-family="Helvetica">bits [23:0]</text>
+<text x="594" y="58" fill="#ffa500" font-size="10" text-anchor="middle" font-family="Helvetica">local offset &mdash; low-order bits select the SRAM word</text>
+<!-- example -->
+<text x="410" y="106" fill="#1d6ed8" font-size="11" text-anchor="middle" font-family="Helvetica">Example: 0x1100_0008 &rarr; node (x=1, y=1) &rarr; SRAM offset 0x008</text>
+<text x="410" y="124" fill="#6b7280" font-size="10" text-anchor="middle" font-family="Helvetica">dest_x = bits[31:28] = 0x1 = 1 &nbsp;&nbsp; dest_y = bits[27:24] = 0x1 = 1 &nbsp;&nbsp; local = 0x000008</text>
+<text x="410" y="150" fill="#b91c1c" font-size="11" text-anchor="middle" font-family="Helvetica">Boundary: (x,y) within mesh 0&#8804;x&#8804;1, 0&#8804;y&#8804;2. Packets outside bounds go to local (no neighbor).</text>
+</svg>
+    <div class="rtw"><div class="rtl">Node IP Inventory</div>
+    <table><tr><th>Node</th><th>Modules</th><th>Special</th></tr>
+    <tr><td>(0,0)</td><td>router_00, ni_00, sram_00</td><td>CPU AXI4-Lite entry point</td></tr>
+    <tr><td>(0,1)</td><td>router_01, ni_01, sram_01</td><td>&mdash;</td></tr>
+    <tr><td>(0,2)</td><td>router_02, ni_02, sram_02</td><td>&mdash;</td></tr>
+    <tr><td>(1,0)</td><td>router_10, ni_10, sram_10</td><td>aes0 engine wired directly</td></tr>
+    <tr><td>(1,1)</td><td>router_11, ni_11, sram_11</td><td>aes1 engine wired directly</td></tr>
+    <tr><td>(1,2)</td><td>router_12, ni_12, sram_12</td><td>&mdash;</td></tr>
+    </table></div></div>
+  </div>
+
+  <div class="sec" id="impl-contract">
+    <div class="sh"><span class="sn">09</span><h2>Naming Convention</h2><span class="st ti">required by testbench</span></div>
+    <div class="co">The testbench probes internal hierarchy paths by name. Your top module must follow the naming pattern below; the configuration of each block is still yours to infer from the diagrams.</div>
+    <div class="dc">
+      <div class="rtw"><div class="rtl">Instance Name Pattern</div>
+      <table><tr><th>Block</th><th>Required instance name</th></tr>
+      <tr><td>reset_sync</td><td><code>u_rst</code></td></tr>
+      <tr><td>tilelink_router at node (x,y)</td><td><code>u_router_XY</code> &mdash; e.g. <code>u_router_00</code>, <code>u_router_12</code></td></tr>
+      <tr><td>tilelink_ni at node (x,y)</td><td><code>u_ni_XY</code> &mdash; e.g. <code>u_ni_00</code>, <code>u_ni_12</code></td></tr>
+      <tr><td>axi_lite_sram at node (x,y)</td><td><code>u_sram_XY</code> &mdash; e.g. <code>u_sram_00</code>, <code>u_sram_12</code></td></tr>
+      <tr><td>aes128 (node 1,0)</td><td><code>u_aes0</code></td></tr>
+      <tr><td>aes128 (node 1,1)</td><td><code>u_aes1</code></td></tr>
+      <tr><td>irq_aggregator</td><td><code>u_irq_agg</code></td></tr>
+      </table></div>
+      <div class="rtw"><div class="rtl">Required Internal Wire Names</div>
+      <table><tr><th>Wire</th><th>Purpose</th></tr>
+      <tr><td><code>tie_02_p0_a_valid</code></td><td>boundary tie-off: node (0,2) North port A-valid (no neighbour, held 0)</td></tr>
+      <tr><td><code>tie_00_p1_a_valid</code></td><td>boundary tie-off: node (0,0) South port A-valid (no neighbour, held 0)</td></tr>
+      <tr><td><code>irq_sources</code></td><td>internal wire carrying the IRQ source bits into the aggregator</td></tr>
+      </table></div>
+    </div>
+  </div>
+
+</main>
+
+</body>
+</html>
