@@ -481,7 +481,7 @@ td:nth-child(2){color:var(--a3);font-weight:600;}
   <!-- ============================================================ -->
   <div class="sec" id="reset-sync">
     <div class="sh"><span class="sn">04</span><h2>Reset Synchronizer</h2><span class="st tr">FF sync chain</span></div>
-    <div class="co">Generates <strong>sys_rst_n</strong>: asserts asynchronously when por_n goes low, deasserts synchronously after passing through the FF chain. Count the FF boxes to determine the synchronizer depth.</div>
+    <div class="co">Generates <strong>sys_rst_n</strong>: asserts asynchronously when por_n goes low, deasserts synchronously after passing through the FF chain. Count the FF boxes to determine the synchronizer depth. The chain has 4 flip-flops, so sys_rst_n goes high 4 clock cycles after por_n is reasserted.</div>
     <div class="dc"><svg style="max-width:100%;height:auto;background:#fff;border-radius:6px;" width="820" height="130" viewBox="0 0 820 130" xmlns="http://www.w3.org/2000/svg">
 <defs><marker id="rsa" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#7bc142"/></marker>
 <marker id="rsb" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#4a9eff"/></marker></defs>
@@ -517,7 +517,7 @@ td:nth-child(2){color:var(--a3);font-weight:600;}
   <!-- ============================================================ -->
   <div class="sec" id="tl-router">
     <div class="sh"><span class="sn">05</span><h2>TileLink-UL Router</h2><span class="st tc">XY routing -- 5 ports</span></div>
-    <div class="co">Each router exposes <strong>5 ports</strong>: p0=North, p1=South, p2=East, p3=West, and a Local inject port (p4, connects to its node's NI or DMA engine). Routing is XY-first. Address bits <strong>[31:28]=dest_x</strong>, <strong>[27:24]=dest_y</strong>. Determine port count and bus widths from the interface shown. The inject port exists on all nodes; for DMA-inject nodes (0,1) and (0,2) the DMA master drives this port directly. For all other nodes the NI drives it.<br/><strong>D-channel limitation:</strong> D-channel responses (read data / write ack) are returned only to the <em>local inject port</em> of the node where the transaction was accepted. D-channel packets do not propagate back across multiple hops. As a consequence, AXI reads issued to remote nodes will never return rvalid to the CPU. All NoC routing verification in the testbench therefore uses direct SRAM hierarchy probes (<code>dut.u_sram_XY.mem[]</code>) rather than AXI read-back.</div>
+    <div class="co">Each router exposes <strong>5 ports</strong>: p0=North, p1=South, p2=East, p3=West, and a Local inject port (p4, connects to its node's NI or DMA engine). Routing is XY-first. Address bits <strong>[31:28]=dest_x</strong>, <strong>[27:24]=dest_y</strong>. Determine port count and bus widths from the interface shown. The inject port exists on all nodes; for DMA-inject nodes (0,1) and (0,2) the DMA master drives this port directly. For all other nodes the NI drives it.<br/><strong>Port direction convention:</strong> p0 (North) connects toward the node with <em>higher</em> y index (y+1); p1 (South) connects toward the node with <em>lower</em> y index (y-1). The router's XY routing logic likewise treats dest_y &gt; NODE_Y as "go North" and dest_y &lt; NODE_Y as "go South". Boundary ports (no neighbour) must be tied to zero.<br/><strong>D-channel limitation:</strong> D-channel responses (read data / write ack) are returned only to the <em>local inject port</em> of the node where the transaction was accepted. D-channel packets do not propagate back across multiple hops. As a consequence, AXI reads issued to remote nodes will not return rvalid to the originating CPU; only writes need to be verified for correctness.</div>
     <div class="dc"><svg style="max-width:100%;height:auto;background:#fff;border-radius:6px;" width="820" height="280" viewBox="0 0 820 280" xmlns="http://www.w3.org/2000/svg">
 <defs><marker id="rta" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto-start-reverse"><polygon points="0 0,8 3,0 6" fill="#4a9eff"/></marker>
 <marker id="rtb" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto-start-reverse"><polygon points="0 0,8 3,0 6" fill="#f59e0b"/></marker></defs>
@@ -549,7 +549,7 @@ td:nth-child(2){color:var(--a3);font-weight:600;}
   <!-- ============================================================ -->
   <div class="sec" id="tl-ni">
     <div class="sh"><span class="sn">06</span><h2>TileLink NI &mdash; AXI4-Lite to TL-UL Bridge</h2><span class="st tc">bridge</span></div>
-    <div class="co">One NI per node. The NI is an <strong>AXI4-Lite slave</strong> on one side and a <strong>TL-UL master</strong> on the other. AXI and TL-UL bus widths match; determine them from the signals shown. The NI's TL-A output connects to the router's inject port.</div>
+    <div class="co">One NI per node. The NI is an <strong>AXI4-Lite slave</strong> on one side and a <strong>TL-UL master</strong> on the other. AXI and TL-UL bus widths match; determine them from the signals shown. The NI's TL-A output connects to the router's inject port. The TL-D response (read data or write ack) must be <strong>latched into a register</strong>. bvalid and rvalid must remain asserted until the AXI master accepts (bready/rready), which requires a holding register since tl_d_valid is only a one-cycle pulse.</div>
     <div class="dc"><svg style="max-width:100%;height:auto;background:#fff;border-radius:6px;" width="820" height="170" viewBox="0 0 820 170" xmlns="http://www.w3.org/2000/svg">
 <defs><marker id="nia" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto-start-reverse"><polygon points="0 0,8 3,0 6" fill="#4a9eff"/></marker>
 <marker id="nib" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto-start-reverse"><polygon points="0 0,8 3,0 6" fill="#7bc142"/></marker></defs>
@@ -614,7 +614,7 @@ td:nth-child(2){color:var(--a3);font-weight:600;}
   <!-- ============================================================ -->
   <div class="sec" id="aes-engine">
     <div class="sh"><span class="sn">08</span><h2>AES-128 Engines</h2><span class="st tp">aes0@(3,0) &nbsp; aes1@(3,1) &nbsp; aes2@(2,0) &nbsp; aes3@(2,1)</span></div>
-    <div class="co">Four AES-128 engines, all using <code>ip_type: aes128</code>. Each takes a 128-bit key and 128-bit plaintext, outputs 128-bit ciphertext. The <strong>done</strong> output is a single-cycle pulse after 10 rounds; <strong>busy</strong> is high during computation. Done signals feed the <code>irq_crypto</code> aggregator as src[0..3].</div>
+    <div class="co">Four AES-128 engines, all using <code>ip_type: aes128</code>. Each takes a 128-bit key and 128-bit plaintext, outputs 128-bit ciphertext. The <strong>done</strong> output is a single-cycle pulse after 10 rounds; <strong>busy</strong> is high during computation. Done signals feed the <code>irq_crypto</code> aggregator as src[0..3]. <strong>Important:</strong> The AES engines are standalone instances, not connected to the router's local AXI port. Every node, including AES nodes at (2,0), (2,1), (3,0), (3,1), still has a regular <code>axi_lite_sram</code> as <code>u_sram_XY</code> on its router local port. The AES engines sit beside the SRAMs, not in place of them.</div>
     <div class="dc"><svg style="max-width:100%;height:auto;background:#fff;border-radius:6px;" width="820" height="190" viewBox="0 0 820 190" xmlns="http://www.w3.org/2000/svg">
 <rect x="8"   y="20" width="190" height="150" rx="6" fill="#3d1a1a" stroke="#f38ba8" stroke-width="2"/>
 <text x="103" y="46" fill="#f38ba8" font-size="11" font-weight="bold" text-anchor="middle" font-family="Helvetica">aes0 @ (3,0)</text>
@@ -663,7 +663,7 @@ td:nth-child(2){color:var(--a3);font-weight:600;}
   <!-- ============================================================ -->
   <div class="sec" id="dma-engine">
     <div class="sh"><span class="sn">09</span><h2>DMA Engine</h2><span class="st ti">memory-to-memory  &mdash;  dma0 injects at (0,1), dma1 injects at (0,2)</span></div>
-    <div class="co">Two DMA engines. Each has an <strong>AXI4-Lite config slave</strong> (CPU programs the transfer via SRC_ADDR / DST_ADDR / LENGTH / CTRL registers) and an <strong>AXI4-Lite master</strong> port (performs the actual read-then-write transfer). The DMA master port connects to the router inject port at its assigned node. <code>dma0_irq</code> feeds irq_crypto src[4], <code>dma1_irq</code> feeds src[5].<br/><strong>Required internal register names (probed by testbench):</strong> the FSM state register must be named <code>dma_st</code> (3-bit; value 0 = idle) and the STATUS/IRQSTAT combined 32-bit register must be named <code>r_stat</code> (bit 0 = busy, bit 1 = done).</div>
+    <div class="co">Two DMA engines. Each has an <strong>AXI4-Lite config slave</strong> (CPU programs the transfer via SRC_ADDR / DST_ADDR / LENGTH / CTRL registers) and an <strong>AXI4-Lite master</strong> port (performs the actual read-then-write transfer). The DMA master port connects to the router inject port at its assigned node. <code>dma0_irq</code> feeds irq_crypto src[4], <code>dma1_irq</code> feeds src[5].<br/><strong>Required internal register names ():</strong> the FSM state register must be named <code>dma_st</code> (3-bit; value 0 = idle) and the STATUS/IRQSTAT combined 32-bit register must be named <code>r_stat</code> (bit 0 = busy, bit 1 = done).</div>
     <div class="dc"><svg style="max-width:100%;height:auto;background:#fff;border-radius:6px;" width="880" height="280" viewBox="0 0 880 280" xmlns="http://www.w3.org/2000/svg">
 <defs>
   <marker id="dma" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#f59e0b"/></marker>
@@ -838,7 +838,7 @@ td:nth-child(2){color:var(--a3);font-weight:600;}
   <!-- ============================================================ -->
   <div class="sec" id="perf-cnt">
     <div class="sh"><span class="sn">12</span><h2>Performance Counter</h2><span class="st ti">4 channels x 32-bit</span></div>
-    <div class="co">A <code>perf_counter</code> with 4 event channels, each counting positive edges of its event input. Channels are wired as: <strong>ch[0]</strong> = ni_00 tl_a_valid (NoC transactions from CPU), <strong>ch[1]</strong> = DMA0 IRQ (completed DMA words), <strong>ch[2]</strong> = DMA1 IRQ, <strong>ch[3]</strong> = any AES done (OR of aes0..aes3). Counter values are readable via SoC config registers 0x08..0x14. Enable and clear via register 0x18.</div>
+    <div class="co">A <code>perf_counter</code> with 4 event channels, each counting positive edges of its event input. Channels are wired as: <strong>ch[0]</strong> = ni_00 tl_a_valid (NoC transactions from CPU), <strong>ch[1]</strong> = DMA0 IRQ (completed DMA words), <strong>ch[2]</strong> = DMA1 IRQ, <strong>ch[3]</strong> = any AES done (OR of aes0..aes3). Counter values are readable via SoC config registers 0x08..0x14. Enable counting with PERF_CTRL[0]=1. Write PERF_CTRL[1]=1 to clear all counters; this bit self-clears the next cycle.</div>
     <div class="dc"><svg style="max-width:100%;height:auto;background:#fff;border-radius:6px;" width="820" height="130" viewBox="0 0 820 130" xmlns="http://www.w3.org/2000/svg">
 <rect x="210" y="10" width="400" height="110" rx="8" fill="#2d2d1a" stroke="#f59e0b" stroke-width="1.5"/>
 <text x="410" y="36" fill="#fcd34d" font-size="12" font-weight="bold" text-anchor="middle" font-family="Helvetica">perf_counter  (4 channels)</text>
@@ -854,7 +854,7 @@ td:nth-child(2){color:var(--a3);font-weight:600;}
   <!-- ============================================================ -->
   <div class="sec" id="addr-map">
     <div class="sh"><span class="sn">13</span><h2>Address Map</h2><span class="st ti">memory map</span></div>
-    <div class="co">The TileLink router uses the top 8 bits of the 32-bit address for XY routing. The crossbar decodes the top nibble to select NoC, APB, or SoC config space.</div>
+    <div class="co">The TileLink router uses the top 8 bits of the 32-bit address for XY routing. The crossbar decodes the top nibble (addr[31:28]) to select NoC, APB, or SoC config space: any address where addr[31:28] != 4'hF goes to the NoC (S0); addr[31:28]==4'hF0 (i.e., 0xF000_xxxx) goes to the APB cluster (S1); addr[31:28]==4'hF0 and the next nibble selects 0xF001_xxxx for SoC cfg (S2). In other words, route to S0 if addr[31:28] != 0xF, S1 if addr[15:12]==0x0 within the 0xF000_xxxx range, S2 if within 0xF001_xxxx.</div>
     <div class="dc">
       <div class="rtl">System Address Map</div>
       <table><tr><th>Base</th><th>End</th><th>Target</th></tr>
@@ -922,14 +922,14 @@ td:nth-child(2){color:var(--a3);font-weight:600;}
       <tr><td><code>irq_periph_src</code></td><td>8-bit bus carrying periph IRQ sources into u_irq_periph</td></tr>
       <tr><td><code>mbox_wr_en</code></td><td>write-enable from SoC config reg into async mailbox</td></tr>
       <tr><td><code>mbox_wr_data</code></td><td>32-bit data written to mailbox</td></tr>
-      <tr><td><code>dma0_irq_w</code></td><td>level IRQ from dma0 to irq_crypto_src[4] -- probed by testbench</td></tr>
-      <tr><td><code>dma1_irq_w</code></td><td>level IRQ from dma1 to irq_crypto_src[5] -- probed by testbench</td></tr>
-      <tr><td><code>uart_rx_irq</code></td><td>UART RX interrupt to irq_periph_src[0] -- probed by testbench</td></tr>
-      <tr><td><code>gpio0_irq</code></td><td>GPIO0 interrupt to irq_periph_src[1] -- probed by testbench</td></tr>
-      <tr><td><code>timer0_irq</code></td><td>Timer0 interrupt to irq_periph_src[3] -- probed by testbench</td></tr>
-      <tr><td><code>gpio1_irq</code></td><td>GPIO1 interrupt to irq_periph_src[2] -- probed by testbench</td></tr>
-      <tr><td><code>wdt_irq</code></td><td>Watchdog interrupt to irq_periph_src[4] -- probed by testbench</td></tr>
-      <tr><td><code>aes0_done</code> .. <code>aes3_done</code></td><td>1-cycle done pulses from each AES engine; OR-fed to irq_crypto_src[0..3] and perf ch[3] -- probed by testbench</td></tr>
+      <tr><td><code>dma0_irq_w</code></td><td>level IRQ from dma0 to irq_crypto_src[4]</td></tr>
+      <tr><td><code>dma1_irq_w</code></td><td>level IRQ from dma1 to irq_crypto_src[5]</td></tr>
+      <tr><td><code>uart_rx_irq</code></td><td>UART RX interrupt to irq_periph_src[0]</td></tr>
+      <tr><td><code>gpio0_irq</code></td><td>GPIO0 interrupt to irq_periph_src[1]</td></tr>
+      <tr><td><code>timer0_irq</code></td><td>Timer0 interrupt to irq_periph_src[3]</td></tr>
+      <tr><td><code>gpio1_irq</code></td><td>GPIO1 interrupt to irq_periph_src[2]</td></tr>
+      <tr><td><code>wdt_irq</code></td><td>Watchdog interrupt to irq_periph_src[4]</td></tr>
+      <tr><td><code>aes0_done</code> .. <code>aes3_done</code></td><td>1-cycle done pulses from each AES engine; OR-fed to irq_crypto_src[0..3] and perf ch[3]</td></tr>
       </table>
     </div>
   </div>
