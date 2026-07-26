@@ -44,7 +44,7 @@ pathlib     contextlib
 
 **No `pip install` is required** for the provided scripts.
 
-Optional — install `pyyaml` for cleaner YAML handling in your own agent:
+Optional -- install `pyyaml` for cleaner YAML handling in your own agent:
 
 ```bash
 pip install pyyaml
@@ -58,7 +58,7 @@ The benchmark model service uses Vertex AI Express Mode. Set the API key in the 
 export EXPRESS_MODE_KEY="your_actual_api_key_here"
 ```
 
-The runner passes the key to the local model service, which proxies all model calls. Your agent never handles API keys directly — it calls the local endpoint at `http://127.0.0.1:<port>/generate` as specified in `info.json`.
+The runner passes the key to the local model service, which proxies all model calls. Your agent never handles API keys directly -- it calls the local endpoint at `http://127.0.0.1:<port>/generate` as specified in `info.json`.
 
 ## Quick Verify
 

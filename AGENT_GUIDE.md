@@ -1,4 +1,4 @@
-# Agent Guide — NXP ICLAD 2026
+# Agent Guide -- NXP ICLAD 2026
 
 This guide explains the complete interface for building a custom agent.
 
@@ -26,7 +26,7 @@ Your agent MUST:
   "model":            "gemini-2.0-flash-exp",
   "model_endpoint":   "http://127.0.0.1:<port>",
   "problem":          "easy",
-  "architecture_doc": "/abs/path/problems/easy/docs/architecture.md",
+  "architecture_doc": "/abs/path/problems/easy/docs/architecture.html",
   "tb_skeleton":      "/abs/path/problems/easy/tb/tb_top_skeleton.v",
   "rtl_gen_lib":      "/abs/path/rtl_gen_lib/",
   "output_dir":       "/abs/path/result/my_agent_v1/easy/",
@@ -39,12 +39,12 @@ Your agent MUST:
 |-------|-------------|
 | `run_id` | Unique identifier for this run |
 | `model` | Default model name to use |
-| `model_endpoint` | Local benchmark model service URL — ALL LLM calls go here |
-| `problem` | `easy` (medium/hard in a future release) |
+| `model_endpoint` | Local benchmark model service URL -- ALL LLM calls go here |
+| `problem` | `easy`, `medium`, or `hard` |
 | `architecture_doc` | Path to architecture diagram + IP descriptions |
 | `tb_skeleton` | Path to TB skeleton with exact port contract |
 | `rtl_gen_lib` | Path to RTL generation library directory |
-| `output_dir` | **Write all generated `.v` files here** |
+| `output_dir` | Write all generated `.v` files here |
 | `temp_dir` | Scratch space for intermediate files |
 | `usage_path` | Token usage written here by model service |
 
@@ -128,7 +128,7 @@ default_div: 26
 | `sram_sp` | depth, data_width (single-port, byte-enable) |
 | `sram_dp` | depth, data_width (dual-port 1W+1R) |
 | `reset_sync` | stages |
-| `cdc_sync` | data_width, kind (2ff\|pulse) |
+| `cdc_sync` | data_width, kind (2ff or pulse) |
 | `apb_uart` | fifo_depth, default_div |
 | `apb_gpio` | gpio_width, debounce_sync |
 | `apb_timer` | width (counter bits) |
@@ -149,11 +149,11 @@ default_div: 26
 From one YAML, different parameter values produce different IP variants:
 
 ```
-sync_fifo  depth=16  → small TX buffer
-sync_fifo  depth=64  → large RX buffer
-sync_fifo  fwft=true → first-word-fall-through FIFO
-axi_lite_crossbar masters=2 slaves=3 → 2M×3S
-axi_lite_crossbar masters=3 slaves=4 → 3M×4S
+sync_fifo  depth=16  -> small TX buffer
+sync_fifo  depth=64  -> large RX buffer
+sync_fifo  fwft=true -> first-word-fall-through FIFO
+axi_lite_crossbar masters=2 slaves=3 -> 2Mx3S
+axi_lite_crossbar masters=3 slaves=4 -> 3Mx4S
 ```
 
 ---
@@ -195,8 +195,8 @@ def generate_ip(yaml_content, rtl_gen_lib_path, output_dir, temp_dir):
 1. **All `.v` files MUST go to `output_dir`**
 2. **Top module name MUST match** exactly as in `tb_top_skeleton.v`
 3. **All port names, widths, directions MUST match** the skeleton
-4. **Only Verilog 2001 syntax** — compatible with `iverilog -g2005`
-5. **No `$clog2` in non-synthesis context** — compute bit widths in Python instead
+4. **Only Verilog 2001 syntax** -- compatible with `iverilog -g2005`
+5. **No `$clog2` in non-synthesis context** -- compute bit widths in Python instead
 6. Files may be flat (all in `output_dir`) or in subdirectories; the evaluator
    recursively collects all `.v` files
 
@@ -214,30 +214,39 @@ vvp sim
 ```
 
 Each test has a numeric ID (e.g., T101, T201). Tests are grouped by category.
-Score = `passed / total × 100%`.
+Score = passed / total x 100%.
 
 ---
 
-## Strategy Tips
+## Important Notes for All Problem Levels
 
-### For Easy
+### RTL Generation Library Coverage
 
-- Focus on getting the AHB-to-APB bridge timing right (SETUP then ENABLE phase)
-- The APB fabric must correctly decode 4KB address windows
-- Watchdog requires the 2-step unlock sequence (magic key = 0xABCD1234)
-- IRQ aggregator polarity: `irq_in = irq_src XOR ~polarity`
+The `rtl_gen_lib` library covers the standard IP types listed in the Supported `ip_type`
+Values table above. For the Medium and Hard problems, some required blocks or glue logic
+may go beyond what the library can generate directly. In those cases, participants are
+free to write custom Verilog or use templated RTL references to supplement the generated
+IPs. The evaluator accepts any valid `.v` files placed in `output_dir`, regardless of
+how they were produced.
 
-> **Note**: Strategy tips for Medium and Hard problems will be added in a future release.
+### Internal Signal and Instance Names
+
+The golden testbench probes internal hierarchy paths by name. Every instance name,
+internal wire name, and sub-module name in your RTL must exactly match the names
+specified in `architecture.html` for the relevant problem level. Functional correctness
+alone is not sufficient if the hierarchy names differ -- the testbench assertions will
+fail to resolve the signals. Always refer to the naming convention tables in
+`architecture.html` before writing the top-level stitching module.
 
 ---
 
 ## Running Your Agent
 
 ```bash
-# Prepare benchmark case
+# Prepare benchmark case (easy)
 python3 runner/run_benchmark.py --problem easy --prepare-only --run-id my_v1
 
-# Run with external model endpoint
+# Run with external model endpoint (easy)
 python3 runner/run_benchmark.py \
     --problem easy \
     --agent my_agent.py \
@@ -245,11 +254,30 @@ python3 runner/run_benchmark.py \
     --model-endpoint http://localhost:8080 \
     --run-id my_v1
 
+# Run medium problem
+python3 runner/run_benchmark.py \
+    --problem medium \
+    --agent my_agent.py \
+    --model gemini-2.0-flash-exp \
+    --model-endpoint http://localhost:8080 \
+    --run-id my_v1_medium
+
+# Run hard problem
+python3 runner/run_benchmark.py \
+    --problem hard \
+    --agent my_agent.py \
+    --model gemini-2.0-flash-exp \
+    --model-endpoint http://localhost:8080 \
+    --run-id my_v1_hard
+
 # Evaluate results
-python3 evaluator/evaluate.py --problem easy --rtl_dir result/my_v1/easy/ --run_id my_v1
+python3 evaluator/evaluate.py --problem easy   --rtl_dir result/my_v1/easy/          --run_id my_v1
+python3 evaluator/evaluate.py --problem medium --rtl_dir result/my_v1_medium/medium/  --run_id my_v1_medium
+python3 evaluator/evaluate.py --problem hard   --rtl_dir result/my_v1_hard/hard/      --run_id my_v1_hard
 
 # View score
 cat factors/my_v1/easy/easy_score.json
+```
 
 ---
 
@@ -265,8 +293,8 @@ from the ICLAD 2026 ASU reference implementation and upgraded for the NXP RTL ta
 | Heartbeat | None | Background thread logs elapsed time every 15s |
 | Retry logic | Basic backoff | `retryable` flag-aware + HTTP 429/5xx classification |
 | Per-call diagnostics | None | Writes JSON diagnostics per model call to `temp_dir/` |
-| YAML temp files | Single `spec_temp.yaml` | Indexed `spec_00.yaml … spec_N.yaml` (no overwrites) |
-| Prompt content | Same minimal prompts | Same minimal prompts — extend `step2`/`step4` to improve |
+| YAML temp files | Single `spec_temp.yaml` | Indexed `spec_00.yaml ... spec_N.yaml` (no overwrites) |
+| Prompt content | Same minimal prompts | Same minimal prompts -- extend `step2`/`step4` to improve |
 
 ### Usage
 
@@ -279,32 +307,35 @@ python3 agent/vertexai_express_agent.py <info_json> \
 ### Agent Pipeline
 
 ```
-Step 1  Read architecture.html (or .md) + tb_top_skeleton.v
-        → Prefers HTML: richer embedded SVG diagrams give the model more visual context
+Step 1  Read architecture.html + tb_top_skeleton.v
+        -> Prefers HTML: richer embedded SVG diagrams give the model more visual context
 
-Step 2  Model call → YAML inference prompt
-        → Returns 8 ```yaml``` blocks, one per IP block
-        → Saves raw response to temp_dir/yaml_response.txt
-        → Saves diagnostics to temp_dir/yaml_inference_diagnostics.json
+Step 2  Model call -> YAML inference prompt
+        -> Returns yaml blocks, one per IP block
+        -> Saves raw response to temp_dir/yaml_response.txt
+        -> Saves diagnostics to temp_dir/yaml_inference_diagnostics.json
 
-Step 3  rtl_gen_lib → generate Verilog from each YAML
-        → Calls rtl_gen_main.py --spec spec_NN.yaml --outdir output_dir/
-        → Collects generated file list from [GEN] lines
+Step 3  rtl_gen_lib -> generate Verilog from each YAML
+        -> Calls rtl_gen_main.py --spec spec_NN.yaml --outdir output_dir/
+        -> Collects generated file list from [GEN] lines
 
-Step 4  Model call → SoC top-level prompt
-        → Passes list of already-generated IPs so model only writes the stitching module
-        → Returns ```verilog // FILE: secure_periph_soc.v ... ``` block
-        → Saves response to temp_dir/soc_response.txt
-        → Saves diagnostics to temp_dir/soc_top_diagnostics.json
+Step 4  Model call -> SoC top-level prompt
+        -> Passes list of already-generated IPs so model only writes the stitching module
+        -> Returns verilog block with // FILE: <top>.v marker
+        -> Saves response to temp_dir/soc_response.txt
+        -> Saves diagnostics to temp_dir/soc_top_diagnostics.json
 
 Step 5  Extract and save Verilog files to output_dir/
-        → Parses // FILE: <name>.v markers for accurate filenames
-        → Falls back to module name extraction
+        -> Parses // FILE: <name>.v markers for accurate filenames
+        -> Falls back to module name extraction
 ```
 
 ### Prompt Design
 
-Both `step2` (YAML inference) and `step4` (SoC top) pass the architecture doc and TB skeleton to the model with minimal guidance. Improving prompt quality — adding constraints, chain-of-thought instructions, or few-shot examples — is left to participants as part of the challenge.
+Both `step2` (YAML inference) and `step4` (SoC top) pass the architecture doc and TB
+skeleton to the model with minimal guidance. Improving prompt quality -- adding
+constraints, chain-of-thought instructions, or few-shot examples -- is left to
+participants as part of the challenge.
 
 ### Heartbeat Example
 
@@ -323,18 +354,18 @@ After each model call, a JSON diagnostics file is saved:
 
 ```
 temp_dir/
-  yaml_inference_diagnostics.json   ← token usage, latency for YAML call
-  soc_top_diagnostics.json          ← token usage, latency for SoC call
-  yaml_response.txt                 ← raw model response (YAML blocks)
-  soc_response.txt                  ← raw model response (Verilog blocks)
-  spec_00.yaml … spec_07.yaml       ← extracted YAML specs
+  yaml_inference_diagnostics.json   <- token usage, latency for YAML call
+  soc_top_diagnostics.json          <- token usage, latency for SoC call
+  yaml_response.txt                 <- raw model response (YAML blocks)
+  soc_response.txt                  <- raw model response (Verilog blocks)
+  spec_00.yaml ... spec_NN.yaml     <- extracted YAML specs
 ```
 
 ### Error Handling
 
 | Error | Behaviour |
 |-------|-----------|
-| HTTP 429, 500–504 | Retry with exponential backoff (2s → 4s → 8s … max 60s) |
+| HTTP 429, 500-504 | Retry with exponential backoff (2s -> 4s -> 8s ... max 60s) |
 | `retryable: true` in payload | Retry regardless of status code |
 | Empty model response | Log warning, return empty string (caller handles gracefully) |
 | RTL gen failure | Log warning, skip that IP (SoC prompt still runs with partial list) |
