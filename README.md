@@ -30,9 +30,6 @@ nxp-soc-problems/
 |   |   |   +-- architecture.html  <- Visual diagrams + minimal spec [GIVEN -- only reference]
 |   |   +-- tb/
 |   |   |   +-- tb_top_skeleton.v  <- TB shell with exact port contract [GIVEN]
-|   |   +-- specs/                 <- Golden YAML specs   [HIDDEN from participants]
-|   |   +-- golden_rtl/            <- Golden Verilog RTL  [HIDDEN from participants]
-|   |   +-- golden_tb/             <- Golden testbench    [HIDDEN from participants]
 |   +-- medium/
 |   |   +-- docs/
 |   |   |   +-- architecture.html  <- Visual diagrams + minimal spec [GIVEN -- only reference]
