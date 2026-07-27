@@ -22,23 +22,132 @@ import subprocess
 import sys
 import time
 import urllib.request
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 
 
 REPO_ROOT   = Path(__file__).resolve().parents[1]
 DEFAULT_AGENT = "agent/starter_agent.py"
-DEFAULT_MODEL = "gemini-2.0-flash-exp"
+DEFAULT_MODEL = "gemini-3.6-flash"
 
-PROBLEMS = ["easy"]  # medium and hard coming in a future release
+PROBLEMS = ["easy", "medium", "hard"]
 
 PROBLEM_CONFIG = {
     "easy": {
         "top_module":       "secure_periph_soc",
-        "architecture_doc": "problems/easy/docs/architecture.md",
+        "architecture_doc": "problems/easy/docs/architecture.html",
         "tb_skeleton":      "problems/easy/tb/tb_top_skeleton.v",
         "golden_tb":        "problems/easy/golden_tb/tb_secure_periph_soc.v",
     },
+    "medium": {
+        "top_module":       "noc_aes_soc",
+        "architecture_doc": "problems/medium/docs/architecture.html",
+        "tb_skeleton":      "problems/medium/tb/tb_top_skeleton.v",
+        "golden_tb":        "problems/medium/golden_tb/tb_noc_aes_soc.v",
+    },
+    "hard": {
+        "top_module":       "crypto_soc",
+        "architecture_doc": "problems/hard/docs/architecture.html",
+        "tb_skeleton":      "problems/hard/tb/tb_top_skeleton.v",
+        "golden_tb":        "problems/hard/golden_tb/tb_crypto_soc.v",
+    },
 }
+
+
+def get_gemini_api_key():
+    # 1. Try environment variable
+    key = os.environ.get("GEMINI_API_KEY")
+    if key:
+        return key.strip()
+    
+    # 2. Try home directory files
+    home = Path.home()
+    for name in [".gemini_api_key", "gemini_api_key", "GEMINI_API_KEY"]:
+        file_path = home / name
+        if file_path.is_file():
+            try:
+                return file_path.read_text(encoding="utf-8").strip()
+            except Exception:
+                pass
+                
+    # 3. If none available, error out
+    sys.exit(
+        "[RUNNER ERROR] Gemini API Key is missing.\n"
+        "Please set the GEMINI_API_KEY environment variable, or place your key inside "
+        "a file named '.gemini_api_key' in your home directory (~/)"
+    )
+
+
+class ModelServiceHandler(BaseHTTPRequestHandler):
+    api_key = ""
+
+    def log_message(self, format, *args):
+        pass
+
+    def do_GET(self):
+        if self.path == "/health":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(b'{"status": "ok"}')
+            return
+        self.send_error(404)
+
+    def do_POST(self):
+        if self.path == "/generate":
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            req_data = json.loads(post_data.decode('utf-8'))
+            
+            prompt = req_data.get("prompt", "")
+            
+            # Map requested model to gemini-3.6-flash which is active and tested
+            model = "gemini-3.6-flash"
+                
+            api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={ModelServiceHandler.api_key}"
+            payload = {
+                "contents": [
+                    {"parts": [{"text": prompt}]}
+                ]
+            }
+            
+            req = urllib.request.Request(
+                api_url,
+                data=json.dumps(payload).encode("utf-8"),
+                headers={"Content-Type": "application/json"},
+                method="POST"
+            )
+            
+            try:
+                with urllib.request.urlopen(req, timeout=180) as resp:
+                    resp_data = json.loads(resp.read().decode("utf-8"))
+                    
+                candidates = resp_data.get("candidates", [])
+                text_response = ""
+                if candidates:
+                    parts = candidates[0].get("content", {}).get("parts", [])
+                    if parts:
+                        text_response = parts[0].get("text", "")
+                        
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    "text": text_response,
+                    "diagnostics": {}
+                }).encode('utf-8'))
+                
+            except Exception as e:
+                self.send_response(500)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    "error": str(e),
+                    "retryable": True
+                }).encode('utf-8'))
+            return
+        self.send_error(404)
 
 
 def find_free_port():
@@ -96,32 +205,18 @@ def write_info_json(problem, run_id, model_name, model_endpoint=""):
 @contextlib.contextmanager
 def model_service(run_id, problem, model_name):
     """Start the benchmark model service and yield its endpoint URL."""
-    model_svc = REPO_ROOT / "scripts" / "model_service.py"
-    if not model_svc.is_file():
-        # No local model service — expect external endpoint
-        yield ""
-        return
-
     port = find_free_port()
     endpoint = f"http://127.0.0.1:{port}"
-    cmd = [
-        sys.executable, str(model_svc),
-        "--port", str(port),
-        "--model", model_name,
-        "--run-id", run_id,
-        "--problem", problem,
-    ]
-    proc = subprocess.Popen(cmd, env=os.environ.copy())
+    server = HTTPServer(("127.0.0.1", port), ModelServiceHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    print(f"[RUNNER] Model service ready at {endpoint}")
     try:
-        wait_for_service(endpoint, proc)
-        print(f"[RUNNER] Model service ready at {endpoint}")
         yield endpoint
     finally:
-        proc.terminate()
-        try:
-            proc.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            proc.kill(); proc.wait()
+        server.shutdown()
+        server.server_close()
+        thread.join()
 
 
 def run_agent(agent_path, info_path, model_name):
@@ -189,6 +284,9 @@ def run_problem(problem, args):
 
 
 def main():
+    # Resolve the API key dynamically and make it available to the server handler
+    ModelServiceHandler.api_key = get_gemini_api_key()
+
     parser = argparse.ArgumentParser(
         description="NXP ICLAD 2026 Benchmark Runner",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -205,8 +303,8 @@ def main():
                         help="Use an existing model endpoint instead of starting one")
     parser.add_argument("--prepare-only", action="store_true",
                         help="Write info.json only — do not invoke agent or evaluator")
-    parser.add_argument("--skip-eval", action="store_true",
-                        help="Run agent but skip evaluation step")
+    parser.add_argument("--skip-eval", action="store_true", default=True,
+                        help="Run agent but skip evaluation step (default: True)")
     args = parser.parse_args()
 
     problems = PROBLEMS if args.problem == "all" else [args.problem]
