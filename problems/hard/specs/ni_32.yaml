@@ -1,0 +1,4 @@
+ip_type: tilelink_ni
+name: ni_32
+data_width: 64
+addr_width: 32

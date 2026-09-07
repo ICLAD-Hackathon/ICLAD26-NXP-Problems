@@ -1,0 +1,4 @@
+ip_type: async_fifo
+name: async_fifo_mbox
+depth: 16
+data_width: 32

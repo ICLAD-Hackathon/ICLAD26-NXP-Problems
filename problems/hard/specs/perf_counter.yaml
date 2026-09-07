@@ -1,0 +1,4 @@
+ip_type: perf_counter
+name: perf_counter
+channels: 4
+counter_width: 32

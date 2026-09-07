@@ -1,0 +1,5 @@
+ip_type: dma_engine
+name: dma0
+burst_len: 4
+data_width: 32
+addr_width: 32

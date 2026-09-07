@@ -1,0 +1,7 @@
+ip_type: tilelink_router
+name: router_12
+node_x: 1
+node_y: 2
+num_ports: 5
+data_width: 64
+addr_width: 32

@@ -1,0 +1,13 @@
+ip_type: axi_lite_crossbar
+name: axi_lite_xbar
+masters: 2
+slaves: 3
+data_width: 32
+addr_width: 32
+slave_ranges:
+  - base: 0x00000000
+    size: 0xF0000000
+  - base: 0xF0000000
+    size: 0x00010000
+  - base: 0xF0010000
+    size: 0x00010000

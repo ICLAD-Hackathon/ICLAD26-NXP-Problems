@@ -1,0 +1,4 @@
+ip_type: apb_gpio
+name: apb_gpio0
+gpio_width: 16
+debounce_sync: 2
