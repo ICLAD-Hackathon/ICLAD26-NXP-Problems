@@ -1,0 +1,4 @@
+ip_type: apb_timer
+name: apb_timer
+channels: 2
+width: 32
