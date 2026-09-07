@@ -1,0 +1,5 @@
+ip_type: axi_lite_sram
+name: sram_00
+depth: 2048
+data_width: 64
+addr_width: 13
